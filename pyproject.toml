@@ -1,13 +1,44 @@
 [project]
-name = "project-safe-team"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
+name = "Calculator"
+authors = [{name = 'spTrent', email = 'artemrazumovvv@gmail.com'}]
+version = "3.0.0"
+description = "Calculator in reverse polish notation for Laboratory job MAI"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+
+]
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.3.0",
+    "ruff>=0.13.2",
     "mypy>=1.18.2",
-    "ruff>=0.14.0",
+    "pytest>=8.4.2",
 ]
+
+[tool.ruff]
+line-length = 79
+target-version = 'py312'
+
+[tool.ruff.lint]
+fixable = ['ALL']
+select = ['E', 'F', 'I', 'B', 'Q']
+ignore = ['E101']
+
+[tool.ruff.format]
+quote-style = "single"
+docstring-code-format = true
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "double"
+
+[tool.mypy]
+python_version = '3.12'
+disallow_untyped_defs = true
+ignore_missing_imports = true
+strict_optional = true
+
+[tool.pytest.ini_options]
+testpaths = ['tests']
+pythonpath = ['src/']
