@@ -1,20 +1,21 @@
-import asyncio
+from .database import SessionLocal
+from . import models
 
-from backend.api_client import get_organizations, register_user
+# Создаем сессию
+db = SessionLocal()
 
+# Создаем объекты организаций
+org1 = models.Organization(name="safe_team")
+org2 = models.Organization(name="dev_team")
+org3 = models.Organization(name="qa_team")
 
-async def main():
-    print('Тестируем register_user()...')
-    user = await register_user({
-        'telegram_id': 123,
-        'name': 'Test User',
-        'organization': 'safe_team'
-    })
-    print('Результат:', user)
+# Добавляем в сессию
+db.add_all([org1, org2, org3])
 
-    print('\nТестируем get_organizations()...')
-    orgs = await get_organizations()
-    print('Результат:', orgs)
+# Сохраняем изменения
+db.commit()
 
-if __name__ == '__main__':
-    asyncio.run(main())
+# Закрываем соединение
+db.close()
+
+print("✅ Тестовые данные добавлены в таблицу organizations.")

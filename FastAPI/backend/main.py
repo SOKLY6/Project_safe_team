@@ -18,7 +18,7 @@ def get_db():
         db.close()
 
 
-@app.post('/register', response_model=schemas.UserResponse)
+@app.post("/register", response_model=schemas.UserResponse)
 def register_user_api(user: schemas.UserCreate, db: Session = Depends(get_db)):
     existing = db.query(models.User).filter(models.User.telegram_id == user.telegram_id).first()
     if existing:
@@ -34,9 +34,15 @@ def register_user_api(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return db_user
 
 
-@app.get('/organizations', response_model=list[schemas.Organization])
-def get_organizations_api():
-    return [
-        {'id': 1, 'name': 'safe_team'},
-        {'id': 2, 'name': 'dev_team'}
-    ]
+# @app.get("/organizations", response_model=list[schemas.Organization])
+# def get_organizations_api():
+#     return [
+#         {'id': 1, 'name': 'safe_team'},
+#         {'id': 2, 'name': 'dev_team'}
+#     ]
+
+
+@app.get("/organizations", response_model=list[schemas.Organization])
+def get_organizations_api(db: Session = Depends(get_db)):
+    organizations = db.query(models.Organization).all()
+    return organizations
