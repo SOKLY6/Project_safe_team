@@ -1,5 +1,5 @@
 # Структура проекта (в идеале)
-
+```
 qr-access-system/
 ├── 📄 README.md
 ├── 📄 requirements.txt
@@ -108,7 +108,7 @@ qr-access-system/
 │
 └── 📁 instance/                     # Папка для SQLite базы (в .gitignore)
     └── 📄 app.db
-
+```
 
 
 
