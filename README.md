@@ -138,24 +138,29 @@ qr-access-system/
 
 ### Установка:
 
-	1. git clone https://github.com/SOKLY6/Project_safe_team.git
-	2. cd Project_safe_team
+```git clone https://github.com/SOKLY6/Project_safe_team.git```
+
+```cd Project_safe_team```
+
+### Чтобы перейти в нужную ветку:
+
+```git switch branch_name```
 
 
 ### Настройка:
 
-  sudo apt update
+  ```sudo apt update```
 
-  sudo apt install curl unzip -y
+  ```sudo apt install curl unzip -y```
 
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```curl -LsSf https://astral.sh/uv/install.sh | sh```
 
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+  ```echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc```
 
-  source ~/.bashrc
+  ```source ~/.bashrc```
 
-  uv sync
+  ```uv sync```
 
-  source .venv/bin/activate
+  ```source .venv/bin/activate```
 
 
