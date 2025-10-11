@@ -33,7 +33,7 @@ target-version = 'py312'
 [tool.ruff.lint]
 fixable = ['ALL']
 select = ['E', 'F', 'I', 'B', 'Q']
-ignore = ['E101']
+ignore = ['E101', "B008"]
 
 [tool.ruff.format]
 quote-style = "single"
