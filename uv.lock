@@ -49,10 +49,16 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "aiosqlite" },
+    { name = "fastapi" },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pydantic" },
     { name = "pytest" },
+    { name = "requests" },
     { name = "ruff" },
+    { name = "sqlalchemy" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -68,10 +74,16 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "aiosqlite", specifier = ">=0.19.0" },
+    { name = "fastapi", specifier = ">=0.104.1" },
     { name = "mypy", specifier = ">=1.18.2" },
     { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "pydantic", specifier = ">=2.5.0" },
     { name = "pytest", specifier = ">=8.4.2" },
+    { name = "requests", specifier = ">=2.31.0" },
     { name = "ruff", specifier = ">=0.13.2" },
+    { name = "sqlalchemy", specifier = ">=2.0.23" },
+    { name = "uvicorn", specifier = ">=0.24.0" },
 ]
 
 [[package]]
