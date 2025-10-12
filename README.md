@@ -5,12 +5,11 @@ qr-access-system/
 ├── 📄 requirements.txt
 ├── 📄 .gitignore
 ├── 📄 .env.example
-├── 📄 config.py
-│
 ├── 🔧 app/                          # Основное приложение FastAPI
 │   ├── 📄 __init__.py
 │   ├── 📄 main.py                   # Точка входа FastAPI
 │   ├── 📄 database.py               # Настройки базы данных
+|   ├── 📄 config.py
 │   │
 │   ├── 📁 models/                   # SQLAlchemy модели
 │   │   ├── 📄 __init__.py
@@ -29,6 +28,7 @@ qr-access-system/
 │   │   ├── 📄 __init__.py
 │   │   ├── 📄 users.py
 │   │   ├── 📄 organizations.py
+│   │   ├── 📄 base.py
 │   │   └── 📄 health.py             # Health check эндпоинт
 │   │
 │   ├── 📁 services/                 # Бизнес-логика

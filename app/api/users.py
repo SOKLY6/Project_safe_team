@@ -1,12 +1,13 @@
-import models
-import schemas
-from fastapi import Depends
+from api import models, schemas
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.main import app, get_db
+from app.main import get_db
+
+router = APIRouter(prefix='/users', tags=['Users'])
 
 
-@app.post('/register', response_model=schemas.UserResponse)
+@router.post('/register', response_model=schemas.UserResponse)
 def register_user_api(
     user: schemas.UserCreate, db: Session = Depends(get_db)
 ) -> schemas.UserResponse:

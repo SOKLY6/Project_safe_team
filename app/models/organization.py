@@ -3,9 +3,6 @@ from sqlalchemy import Column, Integer, String
 from app.database import Base
 
 
-
-
-
 class Organization(Base):
     __tablename__ = 'organizations'
 

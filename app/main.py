@@ -1,13 +1,24 @@
 from typing import Generator
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from .database import Base, SessionLocal, engine
+from app.api.base import router as all_routers
+from app.database import Base, SessionLocal, engine
 
-app = FastAPI()
+app = FastAPI(title='QR Access System')
 
 Base.metadata.create_all(bind=engine)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -16,3 +27,11 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+app.include_router(all_routers)
+
+
+@app.get('/')
+async def root() -> dict:
+    return {'message': 'QR Access System API работает!'}
