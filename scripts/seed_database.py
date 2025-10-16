@@ -20,16 +20,15 @@ import string
 from datetime import datetime
 
 import qrcode
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
-from app.database import Base, engine, SessionLocal
-from app.models import User, Organization
-
+from app.database import Base, SessionLocal, engine
+from app.models import Organization, User
 
 # === Конфигурация ===
 RESET_DB = True           # ⚠️ Если True — очищает БД перед заполнением
-QR_DIR = "qr_codes"
+QR_DIR = 'qr_codes'
 os.makedirs(QR_DIR, exist_ok=True)
 
 
@@ -55,10 +54,10 @@ def reset_database() -> None:
     Используется при первом запуске или при необходимости сбросить тестовые данные.
     Удаляет все таблицы и создаёт их заново на основе моделей SQLAlchemy.
     """
-    print("⚠️ Очистка базы данных...")
+    print('⚠️ Очистка базы данных...')
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    print("✅ База данных сброшена.")
+    print('✅ База данных сброшена.')
 
 
 def create_organizations(session: Session) -> list[Organization]:
@@ -72,12 +71,12 @@ def create_organizations(session: Session) -> list[Organization]:
         list[Organization]: Список объектов созданных или найденных организаций.
     """
     org_names = [
-        "Университет Технологий",
-        "Академия Наук",
-        "Школа №15",
-        "Компания Альфа",
-        "Компания Бета",
-        "IT-Кластер"
+        'Университет Технологий',
+        'Академия Наук',
+        'Школа №15',
+        'Компания Альфа',
+        'Компания Бета',
+        'IT-Кластер'
     ]
     organizations = []
 
@@ -91,7 +90,7 @@ def create_organizations(session: Session) -> list[Organization]:
         organizations.append(org)
 
     session.commit()
-    print(f"✅ Организаций в БД: {len(organizations)}")
+    print(f'✅ Организаций в БД: {len(organizations)}')
     return organizations
 
 
@@ -108,7 +107,7 @@ def create_users(session: Session, organizations: list[Organization]) -> list[Us
     Returns:
         list[User]: Список созданных или найденных пользователей.
     """
-    roles = ["Студент", "Преподаватель", "Сотрудник", "Инженер"]
+    roles = ['Студент', 'Преподаватель', 'Сотрудник', 'Инженер']
     users = []
 
     for i in range(10):
@@ -122,7 +121,7 @@ def create_users(session: Session, organizations: list[Organization]) -> list[Us
         role = random.choice(roles)
         user = User(
             telegram_id=telegram_id,
-            name=f"Тест {role} {i+1}",
+            name=f'Тест {role} {i+1}',
             role=role,
             organization_id=org.id,
             qr_token=random_string(16)
@@ -131,7 +130,7 @@ def create_users(session: Session, organizations: list[Organization]) -> list[Us
         users.append(user)
 
     session.commit()
-    print(f"✅ Пользователей в БД: {len(users)}")
+    print(f'✅ Пользователей в БД: {len(users)}')
     return users
 
 
@@ -160,8 +159,8 @@ def create_guards(session: Session, organizations: list[Organization]) -> list[U
         org = random.choice(organizations)
         guard = User(
             telegram_id=telegram_id,
-            name=f"Охранник {org.name}",
-            role="Охранник",
+            name=f'Охранник {org.name}',
+            role='Охранник',
             organization_id=org.id,
             qr_token=random_string(16)
         )
@@ -169,7 +168,7 @@ def create_guards(session: Session, organizations: list[Organization]) -> list[U
         guards.append(guard)
 
     session.commit()
-    print(f"✅ Охранников в БД: {len(guards)}")
+    print(f'✅ Охранников в БД: {len(guards)}')
     return guards
 
 
@@ -185,9 +184,9 @@ def generate_qr_for_user(user: User) -> str:
     Returns:
         str: Путь к сохранённому файлу QR-кода (PNG).
     """
-    qr_data = f"SAFE_TEAM_USER_TOKEN:{user.qr_token}"
+    qr_data = f'SAFE_TEAM_USER_TOKEN:{user.qr_token}'
     img = qrcode.make(qr_data)
-    path = os.path.join(QR_DIR, f"user_{user.id}.png")
+    path = os.path.join(QR_DIR, f'user_{user.id}.png')
     img.save(path)
     return path
 
@@ -208,7 +207,7 @@ def assign_qr_codes(session: Session, users: list[User]) -> None:
         path = generate_qr_for_user(user)
         user.qr_code_path = path
     session.commit()
-    print("✅ QR-коды созданы и сохранены.")
+    print('✅ QR-коды созданы и сохранены.')
 
 
 def verify_integrity(session: Session) -> None:
@@ -230,11 +229,11 @@ def verify_integrity(session: Session) -> None:
     orgs = session.query(Organization).all()
     missing_qr = [u for u in users if not u.qr_code_path or not os.path.exists(u.qr_code_path)]
 
-    assert len(users) >= 10, "❌ Недостаточно пользователей!"
-    assert len(orgs) >= 6, "❌ Недостаточно организаций!"
-    assert not missing_qr, f"❌ У {len(missing_qr)} пользователей отсутствуют QR-коды."
+    assert len(users) >= 10, '❌ Недостаточно пользователей!'
+    assert len(orgs) >= 6, '❌ Недостаточно организаций!'
+    assert not missing_qr, f'❌ У {len(missing_qr)} пользователей отсутствуют QR-коды.'
 
-    print(f"🔍 Проверка пройдена: {len(users)} пользователей, {len(orgs)} организаций, QR-коды в порядке.")
+    print(f'🔍 Проверка пройдена: {len(users)} пользователей, {len(orgs)} организаций, QR-коды в порядке.')
 
 
 def generate_report(users: list[User], organizations: list[Organization], guards: list[User]) -> None:
@@ -252,23 +251,23 @@ def generate_report(users: list[User], organizations: list[Organization], guards
         organizations (list[Organization]): Список организаций.
         guards (list[User]): Список охранников.
     """
-    with open("seed_report.md", "w", encoding="utf-8") as f:
-        f.write("# Отчёт по тестовым данным Safe Team\n\n")
+    with open('seed_report.md', 'w', encoding='utf-8') as f:
+        f.write('# Отчёт по тестовым данным Safe Team\n\n')
         f.write(f"Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
 
-        f.write("## Организации\n")
+        f.write('## Организации\n')
         for o in organizations:
-            f.write(f"- {o.name}\n")
+            f.write(f'- {o.name}\n')
 
-        f.write("\n## Пользователи\n")
+        f.write('\n## Пользователи\n')
         for u in users:
-            f.write(f"- {u.name} ({u.role}) — {u.organization_rel.name} | QR: {u.qr_code_path}\n")
+            f.write(f'- {u.name} ({u.role}) — {u.organization_rel.name} | QR: {u.qr_code_path}\n')
 
-        f.write("\n## Охранники\n")
+        f.write('\n## Охранники\n')
         for g in guards:
-            f.write(f"- {g.name} — {g.organization_rel.name} | QR: {g.qr_code_path}\n")
+            f.write(f'- {g.name} — {g.organization_rel.name} | QR: {g.qr_code_path}\n')
 
-    print("📄 seed_report.md создан.")
+    print('📄 seed_report.md создан.')
 
 
 def main() -> None:
@@ -300,15 +299,15 @@ def main() -> None:
         assign_qr_codes(session, users + guards)
         verify_integrity(session)
         generate_report(users, organizations, guards)
-        print("🎉 База данных успешно заполнена.")
+        print('🎉 База данных успешно заполнена.')
     except SQLAlchemyError as e:
         session.rollback()
-        print(f"❌ Ошибка при выполнении операции: {e}")
+        print(f'❌ Ошибка при выполнении операции: {e}')
     finally:
         session.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
 
 
