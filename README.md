@@ -25,7 +25,6 @@ qr-access-system/
 │   │   ├── 📄 qr_code.py
 │   │   ├── 📄 access_log.py
 │   │   
-│   │
 │   ├── 📁 api/                      # API эндпоинты
 │   │   ├── 📄 __init__.py
 │   │   ├── 📄 users.py
