@@ -9,6 +9,10 @@ __pycache__/
 # Database
 test.db
 
+# Migarations
+app/alembic/versions
+
+
 # Distribution / packaging
 .Python
 build/
