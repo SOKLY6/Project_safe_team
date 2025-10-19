@@ -1,11 +1,8 @@
-from typing import Generator
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 
 from app.api.base import router as all_routers
-from app.database import Base, SessionLocal, engine
+from app.database import Base, engine
 
 app = FastAPI(title='QR Access System')
 
@@ -19,15 +16,6 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
-
-
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 app.include_router(all_routers)
 

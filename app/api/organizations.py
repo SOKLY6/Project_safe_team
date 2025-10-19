@@ -1,8 +1,9 @@
-from api import models, schemas
+from app.models import organization as models
+from app.schemas import organization as schemas
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.main import get_db
+from app.database import get_db
 
 router = APIRouter(prefix='/organizations', tags=['Organizations'])
 
@@ -10,12 +11,13 @@ router = APIRouter(prefix='/organizations', tags=['Organizations'])
 @router.get('/', response_model=list[schemas.OrganizationResponse])
 def get_organizations_list(
     db: Session = Depends(get_db),
-) -> list[schemas.Organization]:
+) -> list[schemas.OrganizationResponse]:
     return db.query(models.Organization).all()
 
 
 @router.get(
-    '/{orgatnization_id}', response_model=list[schemas.OrganizationResponse]
+    '/{organization_id}',
+    response_model=list[schemas.OrganizationResponse],
 )
 def get_organization_by_id(
     organization_id: int,
