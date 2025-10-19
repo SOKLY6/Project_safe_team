@@ -9,3 +9,8 @@ lint:
 run:
 	@echo "Запуск сервера uvicorn..."
 	uvicorn app.main:app --reload
+
+.PHONY: migrate
+migrate:
+	@echo "Применение миграций alembic..."
+	alembic upgrade head
