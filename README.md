@@ -22,7 +22,9 @@ qr-access-system/
 │   │   ├── 📄 __init__.py
 │   │   ├── 📄 user.py
 │   │   ├── 📄 organization.py
-│   │   └── 📄 base.py
+│   │   ├── 📄 qr_code.py
+│   │   ├── 📄 access_log.py
+│   │   
 │   │
 │   ├── 📁 api/                      # API эндпоинты
 │   │   ├── 📄 __init__.py
