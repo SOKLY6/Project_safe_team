@@ -25,7 +25,9 @@ def db_session():
     Yields:
         sqlalchemy.orm.Session: активная тестовая сессия
     """
-    engine = create_engine('sqlite:///:memory:', connect_args={'check_same_thread': False})
+    engine = create_engine(
+        'sqlite:///:memory:', connect_args={'check_same_thread': False}
+    )
     TestingSessionLocal = sessionmaker(bind=engine)
     Base.metadata.create_all(bind=engine)
     session = TestingSessionLocal()
@@ -33,4 +35,3 @@ def db_session():
         yield session
     finally:
         session.close()
-

@@ -34,7 +34,11 @@ def test_create_organization_success(db_session):
     db_session.add(org)
     db_session.commit()
 
-    saved_org = db_session.query(Organization).filter_by(name='Тестовая организация').first()
+    saved_org = (
+        db_session.query(Organization)
+        .filter_by(name='Тестовая организация')
+        .first()
+    )
     assert saved_org is not None
     assert saved_org.name == 'Тестовая организация'
 

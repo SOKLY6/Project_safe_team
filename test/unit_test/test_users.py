@@ -32,7 +32,7 @@ def test_create_user_success(db_session):
     user = User(
         telegram_id=12345,
         name='Иван Иванов',
-        organization='Тестовая организация'
+        organization='Тестовая организация',
     )
 
     db_session.add(user)
@@ -63,7 +63,7 @@ def test_create_user_validation_error(db_session):
     user = User(
         telegram_id=54321,
         name=None,  # обязательное поле
-        organization='Организация'
+        organization='Организация',
     )
 
     db_session.add(user)
@@ -90,7 +90,7 @@ def test_get_user_by_id(db_session):
     user = User(
         telegram_id=11111,
         name='Тестовый пользователь',
-        organization='Организация'
+        organization='Организация',
     )
 
     db_session.add(user)

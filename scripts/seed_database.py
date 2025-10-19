@@ -27,12 +27,13 @@ from app.database import Base, SessionLocal, engine
 from app.models import Organization, User
 
 # === Конфигурация ===
-RESET_DB = True           # ⚠️ Если True — очищает БД перед заполнением
+RESET_DB = True  # ⚠️ Если True — очищает БД перед заполнением
 QR_DIR = 'qr_codes'
 os.makedirs(QR_DIR, exist_ok=True)
 
 
 # === Вспомогательные функции ===
+
 
 def random_string(n: int = 12) -> str:
     """
@@ -76,7 +77,7 @@ def create_organizations(session: Session) -> list[Organization]:
         'Школа №15',
         'Компания Альфа',
         'Компания Бета',
-        'IT-Кластер'
+        'IT-Кластер',
     ]
     organizations = []
 
@@ -94,7 +95,9 @@ def create_organizations(session: Session) -> list[Organization]:
     return organizations
 
 
-def create_users(session: Session, organizations: list[Organization]) -> list[User]:
+def create_users(
+    session: Session, organizations: list[Organization]
+) -> list[User]:
     """
     Создаёт 10 тестовых пользователей, распределяя их по организациям.
 
@@ -112,7 +115,9 @@ def create_users(session: Session, organizations: list[Organization]) -> list[Us
 
     for i in range(10):
         telegram_id = 100000 + i
-        existing = session.query(User).filter_by(telegram_id=telegram_id).first()
+        existing = (
+            session.query(User).filter_by(telegram_id=telegram_id).first()
+        )
         if existing:
             users.append(existing)
             continue
@@ -121,10 +126,10 @@ def create_users(session: Session, organizations: list[Organization]) -> list[Us
         role = random.choice(roles)
         user = User(
             telegram_id=telegram_id,
-            name=f'Тест {role} {i+1}',
+            name=f'Тест {role} {i + 1}',
             role=role,
             organization_id=org.id,
-            qr_token=random_string(16)
+            qr_token=random_string(16),
         )
         session.add(user)
         users.append(user)
@@ -134,7 +139,9 @@ def create_users(session: Session, organizations: list[Organization]) -> list[Us
     return users
 
 
-def create_guards(session: Session, organizations: list[Organization]) -> list[User]:
+def create_guards(
+    session: Session, organizations: list[Organization]
+) -> list[User]:
     """
     Создаёт тестовых охранников, связанных с разными организациями.
 
@@ -151,7 +158,9 @@ def create_guards(session: Session, organizations: list[Organization]) -> list[U
 
     for i in range(3):
         telegram_id = 200000 + i
-        existing = session.query(User).filter_by(telegram_id=telegram_id).first()
+        existing = (
+            session.query(User).filter_by(telegram_id=telegram_id).first()
+        )
         if existing:
             guards.append(existing)
             continue
@@ -162,7 +171,7 @@ def create_guards(session: Session, organizations: list[Organization]) -> list[U
             name=f'Охранник {org.name}',
             role='Охранник',
             organization_id=org.id,
-            qr_token=random_string(16)
+            qr_token=random_string(16),
         )
         session.add(guard)
         guards.append(guard)
@@ -227,16 +236,26 @@ def verify_integrity(session: Session) -> None:
     """
     users = session.query(User).all()
     orgs = session.query(Organization).all()
-    missing_qr = [u for u in users if not u.qr_code_path or not os.path.exists(u.qr_code_path)]
+    missing_qr = [
+        u
+        for u in users
+        if not u.qr_code_path or not os.path.exists(u.qr_code_path)
+    ]
 
     assert len(users) >= 10, '❌ Недостаточно пользователей!'
     assert len(orgs) >= 6, '❌ Недостаточно организаций!'
-    assert not missing_qr, f'❌ У {len(missing_qr)} пользователей отсутствуют QR-коды.'
+    assert not missing_qr, (
+        f'❌ У {len(missing_qr)} пользователей отсутствуют QR-коды.'
+    )
 
-    print(f'🔍 Проверка пройдена: {len(users)} пользователей, {len(orgs)} организаций, QR-коды в порядке.')
+    print(
+        f'🔍 Проверка пройдена: {len(users)} пользователей, {len(orgs)} организаций, QR-коды в порядке.'
+    )
 
 
-def generate_report(users: list[User], organizations: list[Organization], guards: list[User]) -> None:
+def generate_report(
+    users: list[User], organizations: list[Organization], guards: list[User]
+) -> None:
     """
     Формирует Markdown-файл с отчётом о созданных тестовых данных.
 
@@ -253,7 +272,7 @@ def generate_report(users: list[User], organizations: list[Organization], guards
     """
     with open('seed_report.md', 'w', encoding='utf-8') as f:
         f.write('# Отчёт по тестовым данным Safe Team\n\n')
-        f.write(f"Дата: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f'Дата: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n\n')
 
         f.write('## Организации\n')
         for o in organizations:
@@ -261,11 +280,15 @@ def generate_report(users: list[User], organizations: list[Organization], guards
 
         f.write('\n## Пользователи\n')
         for u in users:
-            f.write(f'- {u.name} ({u.role}) — {u.organization_rel.name} | QR: {u.qr_code_path}\n')
+            f.write(
+                f'- {u.name} ({u.role}) — {u.organization_rel.name} | QR: {u.qr_code_path}\n'
+            )
 
         f.write('\n## Охранники\n')
         for g in guards:
-            f.write(f'- {g.name} — {g.organization_rel.name} | QR: {g.qr_code_path}\n')
+            f.write(
+                f'- {g.name} — {g.organization_rel.name} | QR: {g.qr_code_path}\n'
+            )
 
     print('📄 seed_report.md создан.')
 
@@ -309,5 +332,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-
-
