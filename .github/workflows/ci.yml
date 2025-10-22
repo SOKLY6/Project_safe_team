@@ -21,14 +21,18 @@ jobs:
         
     - name: Install UV
       run: pip install uv
-
-    - name: Create virtual environment
-      run: uv venv
       
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --all-extras
       
-    - name: Run linting
-      run: make lint
+    - name: Run linting with Ruff
+      run: uv run ruff format . --check
       
+    - name: Run Ruff checks
+      run: uv run ruff check .
       
+    - name: Run type checking with MyPy
+      run: uv run mypy app/ --exclude scripts/
+      
+    - name: Run tests with pytest
+      run: uv run pytest
