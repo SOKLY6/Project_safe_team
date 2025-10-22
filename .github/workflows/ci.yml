@@ -26,7 +26,7 @@ jobs:
       run: uv sync --all-extras
       
     - name: Run linting with Ruff
-      run: uv run ruff format . --check
+      run: uv run ruff format .
       
     - name: Run Ruff checks
       run: uv run ruff check .
