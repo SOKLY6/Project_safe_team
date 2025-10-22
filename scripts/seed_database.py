@@ -1,334 +1,230 @@
-"""
-seed_database.py
------------------
-Скрипт для безопасного и идемпотентного заполнения тестовой базы данных проекта Safe Team.
-
-Функциональность:
-- Создание организаций, пользователей и охранников
-- Генерация QR-кодов с безопасными токенами
-- Проверка целостности данных
-- Создание отчёта о тестовых данных
-- Возможность полной очистки БД перед заполнением (через RESET_DB)
-
-Автор: команда Safe Team
-Дата: 2025-10-16
-"""
-
 import os
 import random
-import string
-from datetime import datetime
+import sys
 
-import qrcode
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from io import BytesIO
+
+import qrcode
+
 from app.database import Base, SessionLocal, engine
-from app.models import Organization, User
-
-# === Конфигурация ===
-RESET_DB = True  # ⚠️ Если True — очищает БД перед заполнением
-QR_DIR = 'qr_codes'
-os.makedirs(QR_DIR, exist_ok=True)
+from app.models import AccessLog, Organization, QRCode, User
 
 
-# === Вспомогательные функции ===
-
-
-def random_string(n: int = 12) -> str:
-    """
-    Генерирует случайную строку, используемую как безопасный токен QR-кода.
-
-    Args:
-        n (int): Длина генерируемой строки (по умолчанию 12).
-
-    Returns:
-        str: Случайная строка из букв и цифр.
-    """
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=n))
-
-
-def reset_database() -> None:
-    """
-    Полностью очищает и пересоздаёт структуру базы данных.
-
-    Используется при первом запуске или при необходимости сбросить тестовые данные.
-    Удаляет все таблицы и создаёт их заново на основе моделей SQLAlchemy.
-    """
-    print('⚠️ Очистка базы данных...')
-    Base.metadata.drop_all(bind=engine)
+def create_tables() -> None:
+    """Создание таблиц в базе данных"""
     Base.metadata.create_all(bind=engine)
-    print('✅ База данных сброшена.')
 
 
-def create_organizations(session: Session) -> list[Organization]:
-    """
-    Создаёт набор тестовых организаций, если они ещё не существуют.
-
-    Args:
-        session (Session): Активная сессия SQLAlchemy.
-
-    Returns:
-        list[Organization]: Список объектов созданных или найденных организаций.
-    """
-    org_names = [
-        'Университет Технологий',
-        'Академия Наук',
-        'Школа №15',
-        'Компания Альфа',
-        'Компания Бета',
-        'IT-Кластер',
-    ]
-    organizations = []
-
-    for name in org_names:
-        existing = session.query(Organization).filter_by(name=name).first()
-        if existing:
-            organizations.append(existing)
-            continue
-        org = Organization(name=name)
-        session.add(org)
-        organizations.append(org)
-
-    session.commit()
-    print(f'✅ Организаций в БД: {len(organizations)}')
-    return organizations
+def generate_qr_code_data(user_id: int, organization_id: int) -> str:
+    """Генерация данных для QR-кода"""
+    return f'USER:{user_id}:ORG:{organization_id}:{random.randint(1000, 9999)}'
 
 
-def create_users(
-    session: Session, organizations: list[Organization]
-) -> list[User]:
-    """
-    Создаёт 10 тестовых пользователей, распределяя их по организациям.
+def create_qr_code_for_user(
+    db: Session, user_id: int, organization_id: int
+) -> QRCode:
+    """Создание QR-кода для пользователя"""
+    qr_data = generate_qr_code_data(user_id, organization_id)
 
-    Пользователи не дублируются: при повторном запуске те же telegram_id будут пропущены.
+    # Генерация QR-кода как изображение (опционально)
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(qr_data)
+    qr.make(fit=True)
 
-    Args:
-        session (Session): Активная сессия SQLAlchemy.
-        organizations (list[Organization]): Список организаций для распределения пользователей.
+    # Сохранение в байтовый поток (можно сохранить в файл при необходимости)
+    qr_image = qr.make_image(fill_color='black', back_color='white')
+    img_buffer = BytesIO()
+    qr_image.save(img_buffer, format='PNG')
+    img_buffer.seek(0)
 
-    Returns:
-        list[User]: Список созданных или найденных пользователей.
-    """
-    roles = ['Студент', 'Преподаватель', 'Сотрудник', 'Инженер']
-    users = []
-
-    for i in range(10):
-        telegram_id = 100000 + i
-        existing = (
-            session.query(User).filter_by(telegram_id=telegram_id).first()
-        )
-        if existing:
-            users.append(existing)
-            continue
-
-        org = random.choice(organizations)
-        role = random.choice(roles)
-        user = User(
-            telegram_id=telegram_id,
-            name=f'Тест {role} {i + 1}',
-            role=role,
-            organization_id=org.id,
-            qr_token=random_string(16),
-        )
-        session.add(user)
-        users.append(user)
-
-    session.commit()
-    print(f'✅ Пользователей в БД: {len(users)}')
-    return users
-
-
-def create_guards(
-    session: Session, organizations: list[Organization]
-) -> list[User]:
-    """
-    Создаёт тестовых охранников, связанных с разными организациями.
-
-    При повторных запусках не дублирует охранников (проверка по telegram_id).
-
-    Args:
-        session (Session): Активная сессия SQLAlchemy.
-        organizations (list[Organization]): Список организаций.
-
-    Returns:
-        list[User]: Список созданных или найденных охранников.
-    """
-    guards = []
-
-    for i in range(3):
-        telegram_id = 200000 + i
-        existing = (
-            session.query(User).filter_by(telegram_id=telegram_id).first()
-        )
-        if existing:
-            guards.append(existing)
-            continue
-
-        org = random.choice(organizations)
-        guard = User(
-            telegram_id=telegram_id,
-            name=f'Охранник {org.name}',
-            role='Охранник',
-            organization_id=org.id,
-            qr_token=random_string(16),
-        )
-        session.add(guard)
-        guards.append(guard)
-
-    session.commit()
-    print(f'✅ Охранников в БД: {len(guards)}')
-    return guards
-
-
-def generate_qr_for_user(user: User) -> str:
-    """
-    Генерирует QR-код для пользователя на основе безопасного токена.
-
-    QR-код не содержит личных данных, только токен для дальнейшей верификации.
-
-    Args:
-        user (User): Объект пользователя, для которого создаётся QR.
-
-    Returns:
-        str: Путь к сохранённому файлу QR-кода (PNG).
-    """
-    qr_data = f'SAFE_TEAM_USER_TOKEN:{user.qr_token}'
-    img = qrcode.make(qr_data)
-    path = os.path.join(QR_DIR, f'user_{user.id}.png')
-    img.save(path)
-    return path
-
-
-def assign_qr_codes(session: Session, users: list[User]) -> None:
-    """
-    Генерирует QR-коды для всех пользователей и сохраняет пути в базу.
-
-    Если у пользователя уже есть QR-файл, повторная генерация пропускается.
-
-    Args:
-        session (Session): Активная сессия SQLAlchemy.
-        users (list[User]): Список пользователей, для которых генерируются QR-коды.
-    """
-    for user in users:
-        if user.qr_code_path and os.path.exists(user.qr_code_path):
-            continue
-        path = generate_qr_for_user(user)
-        user.qr_code_path = path
-    session.commit()
-    print('✅ QR-коды созданы и сохранены.')
-
-
-def verify_integrity(session: Session) -> None:
-    """
-    Проверяет целостность данных после заполнения базы.
-
-    Проверки:
-      - Количество пользователей ≥ 10
-      - Количество организаций ≥ 6
-      - У каждого пользователя есть QR-файл на диске
-
-    Args:
-        session (Session): Активная сессия SQLAlchemy.
-
-    Raises:
-        AssertionError: Если какое-либо условие не выполняется.
-    """
-    users = session.query(User).all()
-    orgs = session.query(Organization).all()
-    missing_qr = [
-        u
-        for u in users
-        if not u.qr_code_path or not os.path.exists(u.qr_code_path)
-    ]
-
-    assert len(users) >= 10, '❌ Недостаточно пользователей!'
-    assert len(orgs) >= 6, '❌ Недостаточно организаций!'
-    assert not missing_qr, (
-        f'❌ У {len(missing_qr)} пользователей отсутствуют QR-коды.'
+    # Создание записи в базе данных
+    qr_code = QRCode(
+        code=qr_data, user_id=user_id, organization_id=organization_id
     )
 
-    print(
-        f'🔍 Проверка пройдена: {len(users)} пользователей, {len(orgs)} организаций, QR-коды в порядке.'
-    )
+    db.add(qr_code)
+    db.commit()
+    db.refresh(qr_code)
+
+    print(f'Создан QR-код для пользователя {user_id}: {qr_data}')
+    return qr_code
 
 
-def generate_report(
-    users: list[User], organizations: list[Organization], guards: list[User]
-) -> None:
-    """
-    Формирует Markdown-файл с отчётом о созданных тестовых данных.
-
-    Файл содержит:
-      - список организаций,
-      - список пользователей и их организаций,
-      - список охранников,
-      - пути к QR-кодам.
-
-    Args:
-        users (list[User]): Список пользователей.
-        organizations (list[Organization]): Список организаций.
-        guards (list[User]): Список охранников.
-    """
-    with open('seed_report.md', 'w', encoding='utf-8') as f:
-        f.write('# Отчёт по тестовым данным Safe Team\n\n')
-        f.write(f'Дата: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n\n')
-
-        f.write('## Организации\n')
-        for o in organizations:
-            f.write(f'- {o.name}\n')
-
-        f.write('\n## Пользователи\n')
-        for u in users:
-            f.write(
-                f'- {u.name} ({u.role}) — {u.organization_rel.name} | QR: {u.qr_code_path}\n'
-            )
-
-        f.write('\n## Охранники\n')
-        for g in guards:
-            f.write(
-                f'- {g.name} — {g.organization_rel.name} | QR: {g.qr_code_path}\n'
-            )
-
-    print('📄 seed_report.md создан.')
-
-
-def main() -> None:
-    """
-    Главная точка входа в скрипт.
-
-    Последовательно выполняет:
-      1. (Опционально) сброс базы данных
-      2. Создание организаций
-      3. Создание пользователей
-      4. Создание охранников
-      5. Генерацию QR-кодов
-      6. Проверку целостности
-      7. Генерацию отчёта
-
-    При ошибках выполняет откат транзакции и завершает сессию.
-    """
-    if RESET_DB:
-        reset_database()
-    else:
-        Base.metadata.create_all(bind=engine)
-
-    session = SessionLocal()
+def seed_database() -> None:
+    """Основная функция для заполнения базы данных тестовыми данными"""
+    db = SessionLocal()
 
     try:
-        organizations = create_organizations(session)
-        users = create_users(session, organizations)
-        guards = create_guards(session, organizations)
-        assign_qr_codes(session, users + guards)
-        verify_integrity(session)
-        generate_report(users, organizations, guards)
-        print('🎉 База данных успешно заполнена.')
-    except SQLAlchemyError as e:
-        session.rollback()
-        print(f'❌ Ошибка при выполнении операции: {e}')
+        # Создание таблиц
+        create_tables()
+        print('Таблицы созданы успешно')
+
+        # 1. Создание организаций (3 типа)
+        organizations_data = [
+            # Образовательные учреждения
+            {'name': 'Университет ИТМО', 'type': 'educational'},
+            {'name': 'СПбГУ', 'type': 'educational'},
+            # Бизнес-организации
+            {'name': 'Яндекс', 'type': 'business'},
+            {'name': 'Сбер', 'type': 'business'},
+            # Государственные учреждения
+            {'name': 'Администрация СПб', 'type': 'government'},
+            {'name': 'Городская больница №1', 'type': 'government'},
+        ]
+
+        organizations = []
+        for org_data in organizations_data:
+            organization = Organization(name=org_data['name'])
+            db.add(organization)
+            organizations.append(organization)
+
+        db.commit()
+        for org in organizations:
+            db.refresh(org)
+
+        print('Организации созданы успешно')
+
+        # 2. Создание 10 тестовых пользователей
+        users_data = [
+            # Студенты
+            {
+                'name': 'Иванов Иван Иванович',
+                'telegram_id': 100001,
+                'organization_id': 1,
+                'role': 'student',
+            },
+            {
+                'name': 'Петров Петр Петрович',
+                'telegram_id': 100002,
+                'organization_id': 1,
+                'role': 'student',
+            },
+            {
+                'name': 'Сидорова Анна Сергеевна',
+                'telegram_id': 100003,
+                'organization_id': 2,
+                'role': 'student',
+            },
+            # Преподаватели
+            {
+                'name': 'Кузнецов Алексей Владимирович',
+                'telegram_id': 100004,
+                'organization_id': 1,
+                'role': 'professor',
+            },
+            {
+                'name': 'Николаева Мария Петровна',
+                'telegram_id': 100005,
+                'organization_id': 2,
+                'role': 'professor',
+            },
+            # Сотрудники бизнеса
+            {
+                'name': 'Смирнов Дмитрий Олегович',
+                'telegram_id': 100006,
+                'organization_id': 3,
+                'role': 'developer',
+            },
+            {
+                'name': 'Волкова Екатерина Игоревна',
+                'telegram_id': 100007,
+                'organization_id': 3,
+                'role': 'manager',
+            },
+            # Государственные служащие
+            {
+                'name': 'Федоров Сергей Александрович',
+                'telegram_id': 100008,
+                'organization_id': 5,
+                'role': 'official',
+            },
+            {
+                'name': 'Морозова Ольга Викторовна',
+                'telegram_id': 100009,
+                'organization_id': 6,
+                'role': 'doctor',
+            },
+            # Без организации (тестовый охранник)
+            {
+                'name': 'Охранник Тестовый',
+                'telegram_id': 100010,
+                'organization_id': None,
+                'role': 'security',
+            },
+        ]
+
+        users = []
+        for user_data in users_data:
+            user = User(
+                name=user_data['name'],
+                telegram_id=user_data['telegram_id'],
+                organization_id=user_data['organization_id'],
+            )
+            db.add(user)
+            users.append(user)
+
+        db.commit()
+        for user in users:
+            db.refresh(user)
+
+        print('Пользователи созданы успешно')
+
+        # 3. Создание QR-кодов для пользователей (кроме охранника)
+        for user in users:
+            if user.organization_id:  # Только для пользователей с организацией
+                # Используем значения напрямую без переопределения типов
+                create_qr_code_for_user(db, user.id, user.organization_id)  # type: ignore
+
+        print('QR-коды созданы успешно')
+
+        # 4. Создание тестовых записей доступа (access logs)
+        for _i in range(20):
+            user = random.choice([u for u in users if u.organization_id])
+            qr_code = db.query(QRCode).filter_by(user_id=user.id).first()
+
+            if qr_code:
+                access_log = AccessLog(
+                    user_id=user.id,  # type: ignore
+                    organization_id=user.organization_id,  # type: ignore
+                    qr_code_id=qr_code.id,  # type: ignore
+                )
+                db.add(access_log)
+
+        db.commit()
+        print('Записи доступа созданы успешно')
+
+        print('\n✅ База данных успешно заполнена тестовыми данными!')
+
+        # Вывод статистики
+        print('\n📊 Статистика:')
+        print(f'Организации: {db.query(Organization).count()}')
+        print(f'Пользователи: {db.query(User).count()}')
+        print(f'QR-коды: {db.query(QRCode).count()}')
+        print(f'Записи доступа: {db.query(AccessLog).count()}')
+
+    except Exception as e:
+        db.rollback()
+        print(f'❌ Ошибка при заполнении базы данных: {e}')
+        raise
     finally:
-        session.close()
+        db.close()
+
+
+def add_user_qr_code(
+    db: Session, user_id: int, organization_id: int
+) -> QRCode:
+    """Функция для добавления QR-кода пользователю"""
+    return create_qr_code_for_user(db, user_id, organization_id)
 
 
 if __name__ == '__main__':
-    main()
+    seed_database()

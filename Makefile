@@ -4,6 +4,10 @@ PYTHON = python3
 lint:
 	@echo "Запуск ruff..."
 	ruff format .
+	@echo "Запуск ruff check --fix..."
+	ruff check --fix
+	@echo "Запуск mypy..."
+	mypy app/ scripts/
 
 .PHONY: run
 run:

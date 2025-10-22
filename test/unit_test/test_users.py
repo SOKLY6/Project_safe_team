@@ -1,7 +1,7 @@
 """
 test_users.py
 --------------
-Тесты для операций с пользователями (User) без ForeignKey.
+Тесты для операций с пользователями (User) с учетом структуры моделей.
 Проверяются следующие сценарии:
 1. Создание пользователя (успешно)
 2. Создание пользователя (ошибка валидации)
@@ -11,7 +11,7 @@ test_users.py
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.models.user import User
+from app.models import User
 
 
 # ======================================================
@@ -32,7 +32,7 @@ def test_create_user_success(db_session):
     user = User(
         telegram_id=12345,
         name='Иван Иванов',
-        organization='Тестовая организация',
+        organization_id=None,  # Пользователь без организации
     )
 
     db_session.add(user)
@@ -41,7 +41,7 @@ def test_create_user_success(db_session):
     saved_user = db_session.query(User).filter_by(telegram_id=12345).first()
     assert saved_user is not None
     assert saved_user.name == 'Иван Иванов'
-    assert saved_user.organization == 'Тестовая организация'
+    assert saved_user.organization_id is None
 
 
 # ======================================================
@@ -63,7 +63,7 @@ def test_create_user_validation_error(db_session):
     user = User(
         telegram_id=54321,
         name=None,  # обязательное поле
-        organization='Организация',
+        organization_id=None,
     )
 
     db_session.add(user)
@@ -90,7 +90,7 @@ def test_get_user_by_id(db_session):
     user = User(
         telegram_id=11111,
         name='Тестовый пользователь',
-        organization='Организация',
+        organization_id=None,
     )
 
     db_session.add(user)
@@ -99,4 +99,4 @@ def test_get_user_by_id(db_session):
     fetched = db_session.get(User, user.id)
     assert fetched is not None
     assert fetched.name == 'Тестовый пользователь'
-    assert fetched.organization == 'Организация'
+    assert fetched.organization_id is None
