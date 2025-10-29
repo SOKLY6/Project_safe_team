@@ -1,8 +1,9 @@
-from telegram import ReplyKeyboardMarkup, KeyboardButton
+from telegram import KeyboardButton, ReplyKeyboardMarkup
+
 
 def get_main_keyboard():
     keyboard = [
-        [KeyboardButton("🆘 Помощь"), KeyboardButton("👤 Профиль")],
-        [KeyboardButton("📊 Статистика"), KeyboardButton("🆔 Мой QR-код")]
+        [KeyboardButton('🆘 Помощь'), KeyboardButton('👤 Профиль')],
+        [KeyboardButton('📊 Статистика'), KeyboardButton('🆔 Мой QR-код')],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
