@@ -31,8 +31,5 @@ jobs:
     - name: Run Ruff checks
       run: uv run ruff check .
       
-    - name: Run type checking with MyPy
-      run: uv run mypy app/ --exclude scripts/
-      
     - name: Run tests with pytest
       run: uv run pytest

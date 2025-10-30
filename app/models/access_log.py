@@ -1,4 +1,6 @@
-from sqlalchemy import Column, ForeignKey, Integer
+from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -13,6 +15,9 @@ class AccessLog(Base):
         Integer, ForeignKey('organizations.id'), nullable=False
     )
     qr_code_id = Column(Integer, ForeignKey('qr_codes.id'), nullable=False)
+    timestamp = Column(DateTime, default=datetime.now, nullable=False)
+    access_granted = Column(Boolean, nullable=False)
+    reason = Column(String(255), nullable=True)
 
     user = relationship('User', back_populates='access_logs')
     organization = relationship('Organization', back_populates='access_logs')

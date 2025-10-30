@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
@@ -18,4 +20,14 @@ class QRCodeCreate(QRCodeBase):
 
 class QRCodeResponse(QRCodeBase):
     id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QRCodeActiveResponse(BaseModel):
+    id: int
+    code: str
+    user_name: str
+    organization_id: int
+    created_at: datetime
+    expires_at: datetime
     model_config = ConfigDict(from_attributes=True)
