@@ -1,6 +1,6 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes, CommandHandler, MessageHandler, filters, ConversationHandler
-from bot.keyboards.main_menu import get_main_keyboard
+from Project_safe_team.telegram_bot.keyboards.main_menu import get_main_keyboard
 
 WAITING_FOR_NAME, WAITING_FOR_ORG = range(2)
 ORGANIZATIONS = ["МАИ", "НЕ МАИ", "ЕЩЕ НЕ МАИ"]
