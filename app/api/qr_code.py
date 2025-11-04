@@ -2,8 +2,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from decouple import config
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -32,7 +32,7 @@ async def create_qr(qr_data: QRCodeCreate, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail='User not found')
 
     token = secrets.token_urlsafe(32)
-    lifetime = config('QR_LIFETIME_MINUTES', default=10, cast=int)
+    lifetime = config('QR_LIFETIME_MINUTES', default=10000, cast=int)
     expires = datetime.now(timezone.utc) + timedelta(minutes=lifetime)
 
     qr_code = QRCode(
@@ -78,9 +78,7 @@ async def update_qr(
 
 @router.get('/verify/{token}')
 async def verify_qr(token: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(
-        select(QRCode).filter(QRCode.code == token)
-    )
+    result = await db.execute(select(QRCode).filter(QRCode.code == token))
     qr_token = result.scalar_one_or_none()
 
     if not qr_token:
@@ -181,15 +179,13 @@ async def get_active_qr_codes(
 
 @router.delete('/delete/{qr_id}')
 async def delete_qr(qr_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(QRCode).filter(QRCode.id == qr_id))
-    qr_code = result.scalar_one_or_none()
-
+    qr_code = (
+        await db.execute(select(QRCode).where(QRCode.id == qr_id))
+    ).scalar_one_or_none()
     if not qr_code:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail='QR code not found')
 
+    await db.execute(delete(AccessLog).where(AccessLog.qr_code_id == qr_id))
     await db.delete(qr_code)
     await db.commit()
-
     return {'status': 'success', 'message': 'QR code deleted'}
