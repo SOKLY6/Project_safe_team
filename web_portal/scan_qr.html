@@ -7,6 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/qr-result.css">
 </head>
 <body class="auth-bg">
   <nav class="navbar navbar-expand-lg bg-body-tertiary mb-3">
@@ -31,13 +32,129 @@
 
   <main class="container py-4">
     <div class="row justify-content-center">
-      <div class="col-12 col-md-8 col-lg-6">
+      <div class="col-12 col-md-10 col-lg-8">
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body p-4 p-md-5">
-            <h1 class="h4 mb-3">Страница проверки QR-кода</h1>
-            <p class="text-muted">Здесь будет реализована проверка QR-кода.</p>
-            <div class="d-flex gap-2">
-              <a class="btn btn-primary" href="dashboard.html">Вернуться в панель</a>
+            <div class="text-center mb-4">
+              <div class="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width:56px;height:56px;">
+                <i class="bi bi-qr-code-scan" style="font-size:24px;"></i>
+              </div>
+              <h1 class="h4 mb-2">Проверка QR-кода</h1>
+              <p class="text-muted">Введите или вставьте QR-код для проверки доступа</p>
+            </div>
+
+            <form id="scan-qr-form">
+              <div class="mb-4">
+                <label for="qr-input" class="form-label fw-semibold">QR-код</label>
+                <textarea 
+                  id="qr-input" 
+                  name="qr_code" 
+                  class="form-control" 
+                  rows="8" 
+                  placeholder="Вставьте QR-код здесь или введите вручную..."
+                  autocomplete="off"
+                  spellcheck="false"
+                  style="font-family: 'Courier New', monospace; font-size: 14px; resize: vertical; min-height: 200px;"></textarea>
+                <div class="invalid-feedback" id="qr-error" aria-live="polite"></div>
+                <small class="form-text text-muted mt-2 d-block">Можно вставить текст QR-кода или отсканировать его</small>
+              </div>
+
+              <!-- Индикатор загрузки -->
+              <div id="loading-indicator" class="qr-loading-indicator mb-4" style="display: none;">
+                <div class="text-center">
+                  <div class="spinner-border text-primary" role="status" aria-hidden="true">
+                    <span class="visually-hidden">Загрузка...</span>
+                  </div>
+                  <p class="mt-2 text-muted small">Проверка QR-кода...</p>
+                </div>
+              </div>
+
+              <!-- Результат проверки - карточка успеха -->
+              <div id="result-card-success" class="qr-result-card qr-result-success mb-4" style="display: none;" role="alert">
+                <div class="d-flex align-items-start">
+                  <div class="qr-result-icon me-3">
+                    <i class="bi bi-check-circle-fill"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <h5 class="mb-2">Доступ разрешён</h5>
+                    <p class="mb-0" id="result-success-message"></p>
+                    <div id="result-success-details" class="mt-3"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Результат проверки - карточка отказа -->
+              <div id="result-card-error" class="qr-result-card qr-result-error mb-4" style="display: none;" role="alert">
+                <div class="d-flex align-items-start">
+                  <div class="qr-result-icon me-3">
+                    <i class="bi bi-x-circle-fill"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <h5 class="mb-2">Доступ запрещён</h5>
+                    <p class="mb-0" id="result-error-message"></p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 flex-wrap">
+                <button type="submit" id="check-btn" class="btn btn-primary btn-lg">
+                  <i class="bi bi-check-circle me-2"></i>Проверить
+                </button>
+                <button type="button" id="clear-btn" class="btn btn-outline-secondary btn-lg">
+                  <i class="bi bi-x-circle me-2"></i>Очистить
+                </button>
+                <a href="dashboard.html" class="btn btn-outline-secondary btn-lg ms-auto">
+                  <i class="bi bi-arrow-left me-2"></i>Вернуться
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Блок истории проверок -->
+        <div class="card border-0 shadow-sm rounded-4 mt-4">
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0">
+                <i class="bi bi-clock-history me-2"></i>История проверок
+              </h5>
+              <div class="d-flex gap-2">
+                <button type="button" id="clear-all-history" class="btn btn-sm btn-outline-danger" style="display: none;" title="Очистить всю историю">
+                  <i class="bi bi-trash"></i>
+                </button>
+                <button type="button" id="toggle-history" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-chevron-down" id="history-chevron"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Поиск по истории -->
+            <div id="history-search-container" class="mb-3" style="display: none;">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input 
+                  type="text" 
+                  id="history-search" 
+                  class="form-control" 
+                  placeholder="Поиск по истории..."
+                  autocomplete="off">
+                <button type="button" id="clear-search" class="btn btn-outline-secondary" style="display: none;">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Список истории -->
+            <div id="history-container" style="display: none;">
+              <div id="history-list" class="list-group"></div>
+              <div id="history-empty" class="text-center text-muted py-4" style="display: none;">
+                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">История проверок пуста</p>
+              </div>
+              <div id="history-no-results" class="text-center text-muted py-4" style="display: none;">
+                <i class="bi bi-search" style="font-size: 2rem;"></i>
+                <p class="mt-2 mb-0">Ничего не найдено</p>
+              </div>
             </div>
           </div>
         </div>
@@ -46,6 +163,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="js/scan_qr.js"></script>
 </body>
 </html>
 

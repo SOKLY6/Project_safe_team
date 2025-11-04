@@ -1,0 +1,258 @@
+/* QR Result Cards Styles */
+
+/* Индикатор загрузки с анимацией */
+.qr-loading-indicator {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.qr-loading-indicator.qr-loading-show {
+  opacity: 1;
+}
+
+/* Базовые стили карточек результатов */
+.qr-result-card {
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  border-left: 4px solid;
+}
+
+.qr-result-card.qr-result-show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Карточка успеха (зеленая) */
+.qr-result-success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border-left-color: #10b981;
+  color: #065f46;
+}
+
+.qr-result-success .qr-result-icon {
+  color: #10b981;
+  font-size: 2rem;
+  animation: scaleIn 0.4s ease-out 0.2s both;
+}
+
+.qr-result-success h5 {
+  color: #047857;
+  font-weight: 600;
+  animation: fadeInUp 0.4s ease-out 0.1s both;
+}
+
+.qr-result-success p {
+  color: #059669;
+  animation: fadeInUp 0.4s ease-out 0.2s both;
+}
+
+/* Карточка отказа (красная) */
+.qr-result-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-left-color: #ef4444;
+  color: #991b1b;
+}
+
+.qr-result-error .qr-result-icon {
+  color: #ef4444;
+  font-size: 2rem;
+  animation: scaleIn 0.4s ease-out 0.2s both;
+}
+
+.qr-result-error h5 {
+  color: #dc2626;
+  font-weight: 600;
+  animation: fadeInUp 0.4s ease-out 0.1s both;
+}
+
+.qr-result-error p {
+  color: #ef4444;
+  animation: fadeInUp 0.4s ease-out 0.2s both;
+}
+
+/* Иконка результата */
+.qr-result-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.qr-result-success .qr-result-icon {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.qr-result-error .qr-result-icon {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Детали результата */
+.qr-result-details {
+  font-size: 0.875rem;
+}
+
+.qr-result-details div {
+  padding: 4px 0;
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Темная тема */
+@media (prefers-color-scheme: dark) {
+  .qr-result-success {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+    color: #6ee7b7;
+  }
+
+  .qr-result-success h5 {
+    color: #34d399;
+  }
+
+  .qr-result-success p {
+    color: #6ee7b7;
+  }
+
+  .qr-result-error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.08) 100%);
+    color: #fca5a5;
+  }
+
+  .qr-result-error h5 {
+    color: #f87171;
+  }
+
+  .qr-result-error p {
+    color: #fca5a5;
+  }
+
+  .qr-result-icon {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .qr-result-success .qr-result-icon {
+    background: rgba(16, 185, 129, 0.15);
+  }
+
+  .qr-result-error .qr-result-icon {
+    background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 576px) {
+  .qr-result-card {
+    padding: 16px 20px;
+  }
+
+  .qr-result-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .qr-result-card h5 {
+    font-size: 1rem;
+  }
+}
+
+/* ===== История проверок ===== */
+
+.qr-history-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  padding: 12px 16px !important;
+}
+
+.qr-history-item:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: var(--color-primary);
+  transform: translateX(4px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .qr-history-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.qr-history-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-history-use-btn {
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.qr-history-item:hover .qr-history-use-btn {
+  opacity: 1;
+}
+
+.qr-history-use-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Анимация появления элементов истории */
+.qr-history-item {
+  animation: fadeInUp 0.3s ease-out both;
+}
+
+.qr-history-item:nth-child(1) { animation-delay: 0.05s; }
+.qr-history-item:nth-child(2) { animation-delay: 0.1s; }
+.qr-history-item:nth-child(3) { animation-delay: 0.15s; }
+.qr-history-item:nth-child(4) { animation-delay: 0.2s; }
+.qr-history-item:nth-child(5) { animation-delay: 0.25s; }
+.qr-history-item:nth-child(n+6) { animation-delay: 0.3s; }
+
+/* Поиск в истории */
+#history-search-container {
+  animation: fadeInDown 0.3s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
