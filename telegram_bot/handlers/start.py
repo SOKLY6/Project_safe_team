@@ -1,3 +1,9 @@
+from Project_safe_team.app.database import async_session
+from Project_safe_team.app.models.organization import Organization
+from Project_safe_team.app.models.user import User
+from Project_safe_team.telegram_bot.keyboards.main_menu import (
+    get_main_keyboard,
+)
 from sqlalchemy import select
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import (
@@ -7,11 +13,6 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-
-from Project_safe_team.app.database import async_session
-from Project_safe_team.app.models.organization import Organization
-from Project_safe_team.app.models.user import User
-from Project_safe_team.telegram_bot.keyboards.main_menu import get_main_keyboard
 
 WAITING_FOR_NAME, WAITING_FOR_ORG = range(2)
 
@@ -124,8 +125,7 @@ async def save_organization_and_check(
                 await session.commit()
 
         await update.message.reply_text(
-            f'✅ Спасибо, {name}!\nОрганизация: {org}\n'
-            'Регистрация завершена.',
+            f'✅ Спасибо, {name}!\nОрганизация: {org}\nРегистрация завершена.',
             reply_markup=get_main_keyboard(),
         )
         return ConversationHandler.END
@@ -135,6 +135,7 @@ async def save_organization_and_check(
             'Попробуйте снова:\nВведите ФИО:'
         )
         return WAITING_FOR_NAME
+
 
 async def cancel_registration(
     update: Update, context: ContextTypes.DEFAULT_TYPE

@@ -4,13 +4,12 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import qrcode
-from sqlalchemy import select
-from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
-
 from Project_safe_team.app.database import async_session
 from Project_safe_team.app.models.qr_code import QRCode
 from Project_safe_team.app.models.user import User
+from sqlalchemy import select
+from telegram import Update
+from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,6 +131,7 @@ async def profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
 🏢 Организация ID: {user.organization_id if user.organization_id else 'Не указана'}
 """
         await update.message.reply_text(profile_text)
+
 
 def setup_common_handlers(application):
     application.add_handler(CommandHandler('help', cmd_help))
