@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # Database
-test.db
+#test.db
 
 # Migarations
 app/alembic/versions
