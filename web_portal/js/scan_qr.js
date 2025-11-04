@@ -1,0 +1,686 @@
+(function() {
+  'use strict';
+
+  const form = document.getElementById('scan-qr-form');
+  const qrInput = document.getElementById('qr-input');
+  const checkBtn = document.getElementById('check-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const resultCardSuccess = document.getElementById('result-card-success');
+  const resultCardError = document.getElementById('result-card-error');
+  const resultSuccessMessage = document.getElementById('result-success-message');
+  const resultSuccessDetails = document.getElementById('result-success-details');
+  const resultErrorMessage = document.getElementById('result-error-message');
+  const qrError = document.getElementById('qr-error');
+
+  // Используем относительный URL для API (сервер должен проксировать запросы)
+  // Если API на другом порту, можно использовать полный URL
+  const API_BASE_URL = window.location.origin.replace(':8001', ':8000') || 'http://localhost:8000';
+  const USE_MOCK_API = false; // Переключаем на реальный API
+
+  // История проверок
+  const HISTORY_KEY = 'qr_scan_history';
+  const MAX_HISTORY_ITEMS = 10;
+  
+  // Элементы истории
+  const toggleHistoryBtn = document.getElementById('toggle-history');
+  const historyChevron = document.getElementById('history-chevron');
+  const historyContainer = document.getElementById('history-container');
+  const historySearchContainer = document.getElementById('history-search-container');
+  const historySearch = document.getElementById('history-search');
+  const clearSearchBtn = document.getElementById('clear-search');
+  const clearAllHistoryBtn = document.getElementById('clear-all-history');
+  const historyList = document.getElementById('history-list');
+  const historyEmpty = document.getElementById('history-empty');
+  const historyNoResults = document.getElementById('history-no-results');
+  
+  let isHistoryExpanded = false;
+  let currentSearchQuery = '';
+
+  function showError(message) {
+    qrInput.classList.add('is-invalid');
+    qrError.textContent = message;
+    qrError.style.display = 'block';
+  }
+
+  function clearError() {
+    qrInput.classList.remove('is-invalid');
+    qrError.textContent = '';
+    qrError.style.display = 'none';
+  }
+
+  function hideResults() {
+    resultCardSuccess.style.display = 'none';
+    resultCardError.style.display = 'none';
+    resultCardSuccess.classList.remove('qr-result-show');
+    resultCardError.classList.remove('qr-result-show');
+  }
+
+  function showLoading() {
+    hideResults();
+    loadingIndicator.style.display = 'block';
+    loadingIndicator.classList.add('qr-loading-show');
+    checkBtn.disabled = true;
+    clearBtn.disabled = true;
+    qrInput.disabled = true;
+    
+    // Анимация появления
+    setTimeout(() => {
+      loadingIndicator.style.opacity = '1';
+    }, 10);
+  }
+
+  function hideLoading() {
+    loadingIndicator.style.opacity = '0';
+    setTimeout(() => {
+      loadingIndicator.style.display = 'none';
+      loadingIndicator.classList.remove('qr-loading-show');
+    }, 300);
+    checkBtn.disabled = false;
+    clearBtn.disabled = false;
+    qrInput.disabled = false;
+  }
+
+  function showResult(success, message, data = null) {
+    hideLoading();
+    hideResults();
+    
+    // Небольшая задержка для плавного перехода
+    setTimeout(() => {
+      if (success) {
+        resultSuccessMessage.textContent = message;
+        
+        // Добавляем детальную информацию о пользователе
+        if (data) {
+          let detailsHtml = '<div class="qr-result-details mt-3 pt-3" style="border-top: 1px solid rgba(16, 185, 129, 0.2);">';
+          
+          // ФИО (name)
+          if (data.name) {
+            detailsHtml += `<div class="small mb-2"><strong>ФИО:</strong> ${escapeHtml(data.name)}</div>`;
+          }
+          
+          // ID пользователя
+          if (data.user_id) {
+            detailsHtml += `<div class="small mb-2"><strong>ID:</strong> ${escapeHtml(String(data.user_id))}</div>`;
+          }
+          
+          // Организация
+          if (data.organization) {
+            detailsHtml += `<div class="small mb-2"><strong>Организация:</strong> ${escapeHtml(data.organization)}</div>`;
+          }
+          
+          // Должность
+          if (data.role) {
+            detailsHtml += `<div class="small mb-2"><strong>Должность:</strong> ${escapeHtml(data.role)}</div>`;
+          }
+          
+          // Telegram ID (если есть)
+          if (data.telegram_id) {
+            detailsHtml += `<div class="small mb-2"><strong>Telegram ID:</strong> ${escapeHtml(String(data.telegram_id))}</div>`;
+          }
+          
+          // Статус доступа
+          if (data.access_granted !== undefined) {
+            const accessStatus = data.access_granted ? 'Разрешён' : 'Запрещён';
+            const accessClass = data.access_granted ? 'text-success' : 'text-danger';
+            detailsHtml += `<div class="small mb-2"><strong>Статус доступа:</strong> <span class="${accessClass}">${accessStatus}</span></div>`;
+          }
+          
+          // Время проверки
+          if (data.timestamp) {
+            const date = new Date(data.timestamp);
+            const formattedTime = date.toLocaleString('ru-RU', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            });
+            detailsHtml += `<div class="small text-muted mt-2 pt-2" style="border-top: 1px solid rgba(16, 185, 129, 0.1);"><strong>Время проверки:</strong> ${formattedTime}</div>`;
+          }
+          
+          detailsHtml += '</div>';
+          resultSuccessDetails.innerHTML = detailsHtml;
+        } else {
+          resultSuccessDetails.innerHTML = '';
+        }
+        
+        resultCardSuccess.style.display = 'block';
+        // Анимация появления
+        setTimeout(() => {
+          resultCardSuccess.classList.add('qr-result-show');
+        }, 10);
+      } else {
+        resultErrorMessage.textContent = message;
+        resultCardError.style.display = 'block';
+        // Анимация появления
+        setTimeout(() => {
+          resultCardError.classList.add('qr-result-show');
+        }, 10);
+      }
+      
+      // Прокрутка к результату
+      const resultCard = success ? resultCardSuccess : resultCardError;
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
+  }
+
+  function validateQRCode() {
+    const qrValue = qrInput.value.trim();
+    
+    // Проверка на пустой QR-код
+    if (!qrValue) {
+      showError('Введите QR-код для проверки');
+      return false;
+    }
+
+    if (!qrValue.startsWith('SAFE_TEAM_USER_TOKEN:')) {
+      showError('Неверный формат QR-кода. Ожидается формат: SAFE_TEAM_USER_TOKEN:<token>');
+      return false;
+    }
+
+    // Проверка наличия токена после префикса
+    const parts = qrValue.split(':');
+    if (parts.length < 2 || !parts[1]) {
+      showError('Неверный формат QR-кода. Токен отсутствует.');
+      return false;
+    }
+
+    // Проверка минимальной длины токена
+    const token = parts[1].trim();
+    if (token.length < 5) {
+      showError('Токен QR-кода слишком короткий (минимум 5 символов)');
+      return false;
+    }
+
+    clearError();
+    return true;
+  }
+
+  // Функция нормализации QR-кода (убирает лишние пробелы, нормализует формат)
+  function normalizeQRCode(qrCode) {
+    return qrCode.trim().replace(/\s+/g, ' '); // Убираем лишние пробелы и переносы
+  }
+
+  // Функция извлечения токена из QR-кода
+  function extractToken(qrCode) {
+    if (!qrCode.startsWith('SAFE_TEAM_USER_TOKEN:')) {
+      return null;
+    }
+    const parts = qrCode.split(':');
+    if (parts.length >= 2) {
+      return parts.slice(1).join(':').trim(); // Объединяем все части после первого ':'
+    }
+    return null;
+  }
+
+  async function checkQRCode(qrCode) {
+    // Нормализуем QR-код перед отправкой
+    const normalizedQR = normalizeQRCode(qrCode);
+    
+    if (USE_MOCK_API) {
+      // Имитация задержки API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Мок-проверка QR-кода (для тестирования без сервера)
+      const token = extractToken(normalizedQR);
+      if (token && token.length >= 5) {
+        return {
+          success: true,
+          message: 'QR-код действителен.',
+          data: {
+            user_id: 1,
+            name: 'Тестовый Пользователь',
+            organization: 'Тестовая организация',
+            role: 'Тестер',
+            telegram_id: 123456,
+            access_granted: true,
+            timestamp: new Date().toISOString(),
+            user: 'Тестовый Пользователь' // Для совместимости с историей
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: 'QR-код недействителен или не найден в системе.'
+        };
+      }
+    }
+
+    try {
+      // Извлекаем токен из формата SAFE_TEAM_USER_TOKEN:<token>
+      const token = extractToken(normalizedQR);
+      if (!token) {
+        return {
+          success: false,
+          message: 'Неверный формат QR-кода. Токен не найден.'
+        };
+      }
+
+      // Используем существующий API эндпоинт GET /qr/verify/{token}
+      const response = await fetch(`${API_BASE_URL}/qr/verify/${encodeURIComponent(token)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const data = await response.json();
+
+      // Обработка ответа от сервера
+      // API возвращает {status: 'allowed', ...} или {status: 'denied', reason: ...}
+      if (response.ok && data.status === 'allowed') {
+        // Успешная проверка - пользователь найден и доступ разрешён
+        // Получаем информацию об организации для отображения
+        let organizationName = 'Не указана';
+        if (data.organization_id) {
+          try {
+            const orgResponse = await fetch(`${API_BASE_URL}/organizations/`);
+            if (orgResponse.ok) {
+              const organizations = await orgResponse.json();
+              const org = organizations.find(o => o.id === data.organization_id);
+              if (org) {
+                organizationName = org.name;
+              }
+            }
+          } catch (e) {
+            console.warn('Не удалось получить название организации:', e);
+          }
+        }
+
+        return {
+          success: true,
+          message: 'QR-код действителен. Доступ разрешён.',
+          data: {
+            user_id: null, // API не возвращает user_id
+            name: data.name,
+            organization: organizationName,
+            organization_id: data.organization_id,
+            role: 'Пользователь', // API не возвращает роль
+            telegram_id: data.telegram_id,
+            access_granted: true,
+            timestamp: new Date().toISOString(),
+            user: data.name // Для совместимости с историей
+          }
+        };
+      } else {
+        // Ошибка проверки - доступ запрещён
+        // Переводим reason из API на русский язык
+        let errorMessage = 'QR-код недействителен или доступ запрещён.';
+        if (data.reason) {
+          const reason = data.reason.toLowerCase();
+          if (reason.includes('expired')) {
+            errorMessage = 'QR-код истёк.';
+          } else if (reason.includes('already used')) {
+            errorMessage = 'QR-код уже был использован.';
+          } else if (reason.includes('not found')) {
+            errorMessage = 'QR-код не найден в системе.';
+          } else if (reason.includes('user not found')) {
+            errorMessage = 'Пользователь не найден.';
+          } else {
+            // Используем reason как есть, если это уже русский текст
+            errorMessage = data.reason;
+          }
+        }
+        return {
+          success: false,
+          message: errorMessage
+        };
+      }
+    } catch (error) {
+      console.error('Ошибка при запросе:', error);
+      return {
+        success: false,
+        message: 'Ошибка сети. Проверьте подключение к серверу.'
+      };
+    }
+  }
+
+  // Обработка отправки формы
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    if (!validateQRCode()) {
+      return;
+    }
+
+    const qrCode = qrInput.value.trim();
+    showLoading();
+    clearError();
+
+    const result = await checkQRCode(qrCode);
+    const statusResult = result.success ? "разрешён" : "запрещён";
+    showResult(result.success, result.message, result.data);
+    
+    // Сохраняем в историю
+    const user = result.data?.user; // Безопасное получение user
+    saveToHistory(qrCode, result.success, result.message + ` Доступ ${statusResult}.`, result.data, user);
+  });
+
+  // Обработка кнопки очистки
+  clearBtn.addEventListener('click', function() {
+    clearForm();
+  });
+
+  function clearForm() {
+    qrInput.value = '';
+    clearError();
+    hideResults();
+    qrInput.focus();
+  }
+
+  // Автофокус на поле ввода при загрузке страницы
+  window.addEventListener('load', function() {
+    qrInput.focus();
+  });
+
+  // Очистка ошибок при вводе
+  qrInput.addEventListener('input', function() {
+    if (qrInput.classList.contains('is-invalid')) {
+      clearError();
+    }
+    hideResults();
+  });
+
+  // Обработка вставки через Ctrl+V / Cmd+V
+  qrInput.addEventListener('paste', function(e) {
+    setTimeout(() => {
+      const pastedText = qrInput.value.trim();
+      if (pastedText.length > 0) {
+        clearError();
+      }
+    }, 10);
+  });
+
+  // ===== Функционал истории =====
+
+  function getHistory() {
+    try {
+      const historyJson = localStorage.getItem(HISTORY_KEY);
+      return historyJson ? JSON.parse(historyJson) : [];
+    } catch (e) {
+      console.error('Ошибка чтения истории:', e);
+      return [];
+    }
+  }
+
+  function saveHistory(history) {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch (e) {
+      console.error('Ошибка сохранения истории:', e);
+    }
+  }
+
+  function saveToHistory(qrCode, success, message, data, user) {
+    const history = getHistory();
+    
+    // Удаляем дубликаты (если тот же QR-код уже есть)
+    const filteredHistory = history.filter(item => item.qrCode !== qrCode);
+    
+    // Добавляем новый элемент в начало
+    const newItem = {
+      qrCode: qrCode,
+      success: success,
+      message: message,
+      user: user,
+      timestamp: new Date().toISOString(),
+      data: data || null
+    };
+    
+    filteredHistory.unshift(newItem);
+    
+    // Ограничиваем количество до MAX_HISTORY_ITEMS
+    const limitedHistory = filteredHistory.slice(0, MAX_HISTORY_ITEMS);
+    
+    saveHistory(limitedHistory);
+    
+    // Обновляем отображение, если история открыта
+    if (isHistoryExpanded) {
+      renderHistory();
+    }
+  }
+
+  function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'только что';
+    if (diffMins < 60) return `${diffMins} мин. назад`;
+    if (diffHours < 24) return `${diffHours} ч. назад`;
+    if (diffDays < 7) return `${diffDays} дн. назад`;
+    
+    return date.toLocaleDateString('ru-RU', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function truncateText(text, maxLength = 60) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function filterHistory(history, searchQuery) {
+    if (!searchQuery.trim()) return history;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return history.filter(item => {
+      const qrLower = item.qrCode.toLowerCase();
+      const messageLower = item.message.toLowerCase();
+      return qrLower.includes(query) || messageLower.includes(query);
+    });
+  }
+
+  function renderHistory() {
+    const history = getHistory();
+    const filteredHistory = filterHistory(history, currentSearchQuery);
+    
+    historyList.innerHTML = '';
+    
+    if (history.length === 0) {
+      historyEmpty.style.display = 'block';
+      historyNoResults.style.display = 'none';
+      historyList.style.display = 'none';
+      clearAllHistoryBtn.style.display = 'none';
+      return;
+    }
+    
+    // Показываем кнопку очистки, если есть история
+    if (isHistoryExpanded) {
+      clearAllHistoryBtn.style.display = 'block';
+    }
+    
+    historyEmpty.style.display = 'none';
+    
+    if (filteredHistory.length === 0) {
+      historyNoResults.style.display = 'block';
+      historyList.style.display = 'none';
+      return;
+    }
+    
+    historyNoResults.style.display = 'none';
+    historyList.style.display = 'block';
+    
+    filteredHistory.forEach((item, index) => {
+      const listItem = document.createElement('div');
+      listItem.className = 'list-group-item list-group-item-action qr-history-item';
+      listItem.style.cursor = 'pointer';
+      
+      const statusClass = item.success ? 'text-success' : 'text-danger';
+      const statusIcon = item.success ? 'bi-check-circle-fill' : 'bi-x-circle-fill';
+      const statusText = item.success ? 'Успех' : 'Отказ';
+      
+      const escapedQrCode = escapeHtml(item.qrCode);
+      const escapedMessage = escapeHtml(item.message);
+      
+      listItem.innerHTML = `
+        <div class="d-flex align-items-start">
+          <div class="qr-history-icon me-3 ${statusClass}">
+            <i class="bi ${statusIcon}" style="font-size: 1.25rem;"></i>
+          </div>
+          <div class="flex-grow-1" style="min-width: 0;">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+              <div class="fw-semibold text-truncate" style="font-size: 0.875rem; font-family: 'Courier New', monospace;" title="${escapedQrCode}">
+                ${escapeHtml(truncateText(item.qrCode, 50))}
+              </div>
+              <small class="text-muted ms-2" style="white-space: nowrap;">${formatTime(item.timestamp)}</small>
+            </div>
+            <div class="small ${statusClass} mb-1">
+              <i class="bi ${statusIcon} me-1"></i>${statusText}
+            </div>
+            <div class="small text-muted text-truncate" title="${escapedMessage}">
+              ${escapeHtml(truncateText(item.message, 80))}
+            </div>
+            ${item.user ? `<div class="small text-muted text-truncate" title="${escapeHtml(item.user)}">
+              <strong>Пользователь:</strong> ${escapeHtml(truncateText(item.user, 80))}
+            </div>` : ''}
+          </div>
+          <div class="d-flex gap-1 ms-2">
+            <button type="button" class="btn btn-sm btn-outline-primary qr-history-use-btn" 
+                    data-qr="${item.qrCode.replace(/"/g, '&quot;').replace(/&/g, '&amp;')}" 
+                    title="Использовать этот QR-код">
+              <i class="bi bi-arrow-return-left"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger qr-history-delete-btn" 
+                    data-qr="${item.qrCode.replace(/"/g, '&quot;').replace(/&/g, '&amp;')}" 
+                    title="Удалить из истории">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // Обработчик клика на элементе
+      listItem.addEventListener('click', function(e) {
+        if (!e.target.closest('.qr-history-use-btn') && !e.target.closest('.qr-history-delete-btn')) {
+          useFromHistory(item.qrCode);
+        }
+      });
+      
+      // Обработчик кнопки "Использовать"
+      const useBtn = listItem.querySelector('.qr-history-use-btn');
+      useBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        useFromHistory(item.qrCode);
+      });
+      
+      // Обработчик кнопки "Удалить"
+      const deleteBtn = listItem.querySelector('.qr-history-delete-btn');
+      deleteBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        deleteHistoryItem(item.qrCode);
+      });
+      
+      historyList.appendChild(listItem);
+    });
+  }
+
+  function useFromHistory(qrCode) {
+    qrInput.value = qrCode;
+    qrInput.focus();
+    clearError();
+    hideResults();
+    
+    // Плавная прокрутка к полю ввода
+    qrInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function deleteHistoryItem(qrCode) {
+    if (!confirm('Удалить этот элемент из истории?')) {
+      return;
+    }
+    
+    const history = getHistory();
+    const filteredHistory = history.filter(item => item.qrCode !== qrCode);
+    saveHistory(filteredHistory);
+    renderHistory();
+    
+    // Скрываем кнопку очистки, если история пуста
+    if (filteredHistory.length === 0) {
+      clearAllHistoryBtn.style.display = 'none';
+    }
+  }
+
+  function clearAllHistory() {
+    const history = getHistory();
+    if (history.length === 0) {
+      return;
+    }
+    
+    if (!confirm(`Удалить всю историю проверок (${history.length} элементов)?`)) {
+      return;
+    }
+    
+    saveHistory([]);
+    renderHistory();
+    clearAllHistoryBtn.style.display = 'none';
+  }
+
+  function toggleHistory() {
+    isHistoryExpanded = !isHistoryExpanded;
+    
+    if (isHistoryExpanded) {
+      historyContainer.style.display = 'block';
+      historySearchContainer.style.display = 'block';
+      historyChevron.classList.remove('bi-chevron-down');
+      historyChevron.classList.add('bi-chevron-up');
+      
+      // Показываем кнопку очистки, если есть история
+      const history = getHistory();
+      clearAllHistoryBtn.style.display = history.length > 0 ? 'block' : 'none';
+      
+      renderHistory();
+    } else {
+      historyContainer.style.display = 'none';
+      historySearchContainer.style.display = 'none';
+      historyChevron.classList.remove('bi-chevron-up');
+      historyChevron.classList.add('bi-chevron-down');
+      clearAllHistoryBtn.style.display = 'none';
+    }
+  }
+
+  // Обработчики событий
+  toggleHistoryBtn.addEventListener('click', toggleHistory);
+  
+  clearAllHistoryBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    clearAllHistory();
+  });
+  
+  historySearch.addEventListener('input', function(e) {
+    currentSearchQuery = e.target.value;
+    if (currentSearchQuery.trim()) {
+      clearSearchBtn.style.display = 'block';
+    } else {
+      clearSearchBtn.style.display = 'none';
+    }
+    renderHistory();
+  });
+  
+  clearSearchBtn.addEventListener('click', function() {
+    historySearch.value = '';
+    currentSearchQuery = '';
+    clearSearchBtn.style.display = 'none';
+    renderHistory();
+  });
+
+  // Инициализация истории при загрузке
+  if (getHistory().length > 0) {
+    // Если есть история, автоматически не раскрываем, но показываем индикатор
+  }
+})();
