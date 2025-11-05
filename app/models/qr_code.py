@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -17,7 +17,7 @@ class QRCode(Base):
     )
     created_at = Column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now().replace(tzinfo=None),
         nullable=False,
     )
     expires_at = Column(DateTime, nullable=False)

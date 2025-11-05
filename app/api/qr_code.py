@@ -1,7 +1,5 @@
-import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
-from decouple import config
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,36 +13,34 @@ from app.schemas.qr_code import (
     QRCodeCreate,
     QRCodeResponse,
 )
+from app.services.qr_service import (
+    create_qr_code,
+    get_active_qr_code,
+)
+
 
 router = APIRouter(prefix='/qr', tags=['QR Verification'])
 
 
-@router.post('/post', response_model=QRCodeResponse)
-async def create_qr(qr_data: QRCodeCreate, db: AsyncSession = Depends(get_db)):
-    user_result = await db.execute(
-        select(User).filter(User.id == qr_data.user_id)
-    )
-    user = user_result.scalar_one_or_none()
-
-    if not user:
-        from fastapi import HTTPException
-
+@router.post('/generate/{user_id}', response_model=QRCodeResponse)
+async def generate_qr(
+    user_id: int,
+    organization_id: int = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    qr_code = await create_qr_code(user_id, organization_id, db)
+    if not qr_code:
         raise HTTPException(status_code=404, detail='User not found')
+    return qr_code
 
-    token = secrets.token_urlsafe(32)
-    lifetime = config('QR_LIFETIME_MINUTES', default=10000, cast=int)
-    expires = datetime.now(timezone.utc) + timedelta(minutes=lifetime)
 
-    qr_code = QRCode(
-        code=token,
-        user_id=qr_data.user_id,
-        organization_id=qr_data.organization_id,
-        expires_at=expires,
-    )
-    db.add(qr_code)
-    await db.commit()
-    await db.refresh(qr_code)
-
+@router.get('/active/{user_id}', response_model=QRCodeResponse)
+async def get_active(user_id: int, db: AsyncSession = Depends(get_db)):
+    qr_code = await get_active_qr_code(user_id, db)
+    if not qr_code:
+        raise HTTPException(
+            status_code=404, detail='No active QR code found'
+        )
     return qr_code
 
 
@@ -56,7 +52,7 @@ async def update_qr(
     qr_code = result.scalar_one_or_none()
 
     if not qr_code:
-        return {'status': 'error', 'reason': 'QR code not found'}
+        raise HTTPException(status_code=404, detail='QR code not found')
 
     user_result = await db.execute(
         select(User).filter(User.id == qr_data.user_id)
@@ -64,9 +60,8 @@ async def update_qr(
     user = user_result.scalar_one_or_none()
 
     if not user:
-        return {'status': 'error', 'reason': 'User not found'}
+        raise HTTPException(status_code=404, detail='User not found')
 
-    qr_code.code = qr_data.code
     qr_code.user_id = qr_data.user_id
     qr_code.organization_id = qr_data.organization_id
 
@@ -96,7 +91,7 @@ async def verify_qr(token: str, db: AsyncSession = Depends(get_db)):
         await db.commit()
         return {'status': 'denied', 'reason': 'Token already used'}
 
-    if qr_token.expires_at < datetime.utcnow():
+    if qr_token.expires_at < datetime.now().replace(tzinfo=None):
         log_entry = AccessLog(
             user_id=qr_token.user_id,
             organization_id=qr_token.organization_id,
@@ -154,7 +149,7 @@ async def get_active_qr_codes(
         .join(User, QRCode.user_id == User.id)
         .filter(
             QRCode.used.is_(False),
-            QRCode.expires_at > datetime.utcnow(),
+            QRCode.expires_at > datetime.now().replace(tzinfo=None),
         )
     )
 
