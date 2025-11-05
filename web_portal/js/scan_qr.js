@@ -58,23 +58,45 @@
 
   function showLoading() {
     hideResults();
-    loadingIndicator.style.display = 'block';
-    loadingIndicator.classList.add('qr-loading-show');
+    
     checkBtn.disabled = true;
     clearBtn.disabled = true;
     qrInput.disabled = true;
     
-    // Анимация появления
+    // Убеждаемся, что элемент виден
+    loadingIndicator.style.display = 'block';
+    loadingIndicator.style.visibility = 'visible';
+    loadingIndicator.style.opacity = '0';
+    loadingIndicator.classList.remove('qr-loading-show');
+    
+    // Принудительный рефлоу
+    void loadingIndicator.offsetHeight;
+    
+    // Показываем с анимацией
     setTimeout(() => {
-      loadingIndicator.style.opacity = '1';
+      loadingIndicator.classList.add('qr-loading-show');
+      
+      // Проверка в консоли для отладки
+      const computed = window.getComputedStyle(loadingIndicator);
+      const spinner = loadingIndicator.querySelector('.spinner-border');
+      console.log('Loading indicator shown:', {
+        display: computed.display,
+        opacity: computed.opacity,
+        visibility: computed.visibility,
+        hasClass: loadingIndicator.classList.contains('qr-loading-show'),
+        spinnerExists: !!spinner,
+        spinnerDisplay: spinner ? window.getComputedStyle(spinner).display : 'no spinner'
+      });
     }, 10);
   }
 
   function hideLoading() {
-    loadingIndicator.style.opacity = '0';
+    loadingIndicator.classList.remove('qr-loading-show');
+    // Скрываем сразу после завершения анимации
     setTimeout(() => {
       loadingIndicator.style.display = 'none';
-      loadingIndicator.classList.remove('qr-loading-show');
+      loadingIndicator.style.opacity = '';
+      loadingIndicator.style.visibility = '';
     }, 300);
     checkBtn.disabled = false;
     clearBtn.disabled = false;
@@ -85,85 +107,70 @@
     hideLoading();
     hideResults();
     
-    // Небольшая задержка для плавного перехода
-    setTimeout(() => {
-      if (success) {
-        resultSuccessMessage.textContent = message;
+    if (success) {
+      resultSuccessMessage.textContent = message;
+      
+      // Добавляем детальную информацию о пользователе
+      if (data) {
+        let detailsHtml = '<div class="qr-result-details mt-3 pt-3" style="border-top: 1px solid rgba(16, 185, 129, 0.2);">';
         
-        // Добавляем детальную информацию о пользователе
-        if (data) {
-          let detailsHtml = '<div class="qr-result-details mt-3 pt-3" style="border-top: 1px solid rgba(16, 185, 129, 0.2);">';
-          
-          // ФИО (name)
-          if (data.name) {
-            detailsHtml += `<div class="small mb-2"><strong>ФИО:</strong> ${escapeHtml(data.name)}</div>`;
-          }
-          
-          // ID пользователя
-          if (data.user_id) {
-            detailsHtml += `<div class="small mb-2"><strong>ID:</strong> ${escapeHtml(String(data.user_id))}</div>`;
-          }
-          
-          // Организация
-          if (data.organization) {
-            detailsHtml += `<div class="small mb-2"><strong>Организация:</strong> ${escapeHtml(data.organization)}</div>`;
-          }
-          
-          // Должность
-          if (data.role) {
-            detailsHtml += `<div class="small mb-2"><strong>Должность:</strong> ${escapeHtml(data.role)}</div>`;
-          }
-          
-          // Telegram ID (если есть)
-          if (data.telegram_id) {
-            detailsHtml += `<div class="small mb-2"><strong>Telegram ID:</strong> ${escapeHtml(String(data.telegram_id))}</div>`;
-          }
-          
-          // Статус доступа
-          if (data.access_granted !== undefined) {
-            const accessStatus = data.access_granted ? 'Разрешён' : 'Запрещён';
-            const accessClass = data.access_granted ? 'text-success' : 'text-danger';
-            detailsHtml += `<div class="small mb-2"><strong>Статус доступа:</strong> <span class="${accessClass}">${accessStatus}</span></div>`;
-          }
-          
-          // Время проверки
-          if (data.timestamp) {
-            const date = new Date(data.timestamp);
-            const formattedTime = date.toLocaleString('ru-RU', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit'
-            });
-            detailsHtml += `<div class="small text-muted mt-2 pt-2" style="border-top: 1px solid rgba(16, 185, 129, 0.1);"><strong>Время проверки:</strong> ${formattedTime}</div>`;
-          }
-          
-          detailsHtml += '</div>';
-          resultSuccessDetails.innerHTML = detailsHtml;
-        } else {
-          resultSuccessDetails.innerHTML = '';
+        // ФИО (name)
+        if (data.name) {
+          detailsHtml += `<div class="small mb-2"><strong>ФИО:</strong> ${escapeHtml(data.name)}</div>`;
         }
         
-        resultCardSuccess.style.display = 'block';
-        // Анимация появления
-        setTimeout(() => {
-          resultCardSuccess.classList.add('qr-result-show');
-        }, 10);
+        // ID пользователя
+        if (data.user_id) {
+          detailsHtml += `<div class="small mb-2"><strong>ID:</strong> ${escapeHtml(String(data.user_id))}</div>`;
+        }
+        
+        // Организация
+        if (data.organization) {
+          detailsHtml += `<div class="small mb-2"><strong>Организация:</strong> ${escapeHtml(data.organization)}</div>`;
+        }
+        
+        // Должность
+        if (data.role) {
+          detailsHtml += `<div class="small mb-2"><strong>Должность:</strong> ${escapeHtml(data.role)}</div>`;
+        }
+        
+        // Telegram ID (если есть)
+        if (data.telegram_id) {
+          detailsHtml += `<div class="small mb-2"><strong>Telegram ID:</strong> ${escapeHtml(String(data.telegram_id))}</div>`;
+        }
+        
+        // Статус доступа
+        if (data.access_granted !== undefined) {
+          const accessStatus = data.access_granted ? 'Разрешён' : 'Запрещён';
+          const accessClass = data.access_granted ? 'text-success' : 'text-danger';
+          detailsHtml += `<div class="small mb-2"><strong>Статус доступа:</strong> <span class="${accessClass}">${accessStatus}</span></div>`;
+        }
+        
+        // Время проверки
+        if (data.timestamp) {
+          const date = new Date(data.timestamp);
+          const formattedTime = date.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+          detailsHtml += `<div class="small text-muted mt-2 pt-2" style="border-top: 1px solid rgba(16, 185, 129, 0.1);"><strong>Время проверки:</strong> ${formattedTime}</div>`;
+        }
+        
+        detailsHtml += '</div>';
+        resultSuccessDetails.innerHTML = detailsHtml;
       } else {
-        resultErrorMessage.textContent = message;
-        resultCardError.style.display = 'block';
-        // Анимация появления
-        setTimeout(() => {
-          resultCardError.classList.add('qr-result-show');
-        }, 10);
+        resultSuccessDetails.innerHTML = '';
       }
       
-      // Прокрутка к результату
-      const resultCard = success ? resultCardSuccess : resultCardError;
-      resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 150);
+      resultCardSuccess.style.display = 'block';
+    } else {
+      resultErrorMessage.textContent = message;
+      resultCardError.style.display = 'block';
+    }
   }
 
   function validateQRCode() {
@@ -175,22 +182,9 @@
       return false;
     }
 
-    if (!qrValue.startsWith('SAFE_TEAM_USER_TOKEN:')) {
-      showError('Неверный формат QR-кода. Ожидается формат: SAFE_TEAM_USER_TOKEN:<token>');
-      return false;
-    }
-
-    // Проверка наличия токена после префикса
-    const parts = qrValue.split(':');
-    if (parts.length < 2 || !parts[1]) {
-      showError('Неверный формат QR-кода. Токен отсутствует.');
-      return false;
-    }
-
-    // Проверка минимальной длины токена
-    const token = parts[1].trim();
-    if (token.length < 5) {
-      showError('Токен QR-кода слишком короткий (минимум 5 символов)');
+    // Проверка минимальной длины QR-кода
+    if (qrValue.length < 5) {
+      showError('QR-код слишком короткий (минимум 5 символов)');
       return false;
     }
 
@@ -203,16 +197,9 @@
     return qrCode.trim().replace(/\s+/g, ' '); // Убираем лишние пробелы и переносы
   }
 
-  // Функция извлечения токена из QR-кода
+  // Функция извлечения токена из QR-кода (теперь просто возвращает сам QR-код)
   function extractToken(qrCode) {
-    if (!qrCode.startsWith('SAFE_TEAM_USER_TOKEN:')) {
-      return null;
-    }
-    const parts = qrCode.split(':');
-    if (parts.length >= 2) {
-      return parts.slice(1).join(':').trim(); // Объединяем все части после первого ':'
-    }
-    return null;
+    return qrCode.trim();
   }
 
   async function checkQRCode(qrCode) {
@@ -249,37 +236,37 @@
     }
 
     try {
-      // Извлекаем токен из формата SAFE_TEAM_USER_TOKEN:<token>
+      // Используем весь QR-код как токен (без префикса)
       const token = extractToken(normalizedQR);
-      if (!token) {
-        return {
-          success: false,
-          message: 'Неверный формат QR-кода. Токен не найден.'
-        };
-      }
 
-      // Используем существующий API эндпоинт GET /qr/verify/{token}
-      const response = await fetch(`${API_BASE_URL}/qr/verify/${encodeURIComponent(token)}`, {
-        method: 'GET',
+      // Используем API эндпоинт POST /qr/verify
+      const response = await fetch(`${API_BASE_URL}/qr/verify`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+          qr_data: token, // Отправляем QR-код как токен
+          scanner_id: 'web_portal' // ID сканера для веб-портала
+        })
       });
 
       const data = await response.json();
 
       // Обработка ответа от сервера
-      // API возвращает {status: 'allowed', ...} или {status: 'denied', reason: ...}
-      if (response.ok && data.status === 'allowed') {
+      // API возвращает {status: 'granted', user_info: {...}} или {status: 'denied'|'invalid'|'expired', message: ...}
+      if (response.ok && data.status === 'granted' && data.user_info) {
         // Успешная проверка - пользователь найден и доступ разрешён
+        const userInfo = data.user_info;
+        
         // Получаем информацию об организации для отображения
         let organizationName = 'Не указана';
-        if (data.organization_id) {
+        if (userInfo.organization_id) {
           try {
             const orgResponse = await fetch(`${API_BASE_URL}/organizations/`);
             if (orgResponse.ok) {
               const organizations = await orgResponse.json();
-              const org = organizations.find(o => o.id === data.organization_id);
+              const org = organizations.find(o => o.id === userInfo.organization_id);
               if (org) {
                 organizationName = org.name;
               }
@@ -291,36 +278,40 @@
 
         return {
           success: true,
-          message: 'QR-код действителен. Доступ разрешён.',
+          message: data.message || 'QR-код действителен. Доступ разрешён.',
           data: {
-            user_id: null, // API не возвращает user_id
-            name: data.name,
+            user_id: userInfo.id,
+            name: userInfo.name,
             organization: organizationName,
-            organization_id: data.organization_id,
+            organization_id: userInfo.organization_id,
             role: 'Пользователь', // API не возвращает роль
-            telegram_id: data.telegram_id,
+            telegram_id: userInfo.telegram_id,
             access_granted: true,
             timestamp: new Date().toISOString(),
-            user: data.name // Для совместимости с историей
+            user: userInfo.name // Для совместимости с историей
           }
         };
       } else {
         // Ошибка проверки - доступ запрещён
-        // Переводим reason из API на русский язык
+        // Переводим message из API на русский язык
         let errorMessage = 'QR-код недействителен или доступ запрещён.';
-        if (data.reason) {
-          const reason = data.reason.toLowerCase();
-          if (reason.includes('expired')) {
+        if (data.message) {
+          const message = data.message.toLowerCase();
+          if (message.includes('expired')) {
             errorMessage = 'QR-код истёк.';
-          } else if (reason.includes('already used')) {
+          } else if (message.includes('already used')) {
             errorMessage = 'QR-код уже был использован.';
-          } else if (reason.includes('not found')) {
+          } else if (message.includes('not found')) {
             errorMessage = 'QR-код не найден в системе.';
-          } else if (reason.includes('user not found')) {
+          } else if (message.includes('user not found')) {
             errorMessage = 'Пользователь не найден.';
+          } else if (message.includes('invalid') || message.includes('format')) {
+            errorMessage = 'Неверный формат QR-кода.';
+          } else if (message.includes('rate limit')) {
+            errorMessage = 'Превышен лимит запросов. Попробуйте позже.';
           } else {
-            // Используем reason как есть, если это уже русский текст
-            errorMessage = data.reason;
+            // Используем message как есть, если это уже русский текст
+            errorMessage = data.message;
           }
         }
         return {
@@ -349,7 +340,13 @@
     showLoading();
     clearError();
 
-    const result = await checkQRCode(qrCode);
+    // Минимальная задержка для демонстрации индикатора загрузки (500ms)
+    // Это гарантирует, что пользователь увидит анимацию загрузки
+    const [result] = await Promise.all([
+      checkQRCode(qrCode),
+      new Promise(resolve => setTimeout(resolve, 500))
+    ]);
+    
     const statusResult = result.success ? "разрешён" : "запрещён";
     showResult(result.success, result.message, result.data);
     

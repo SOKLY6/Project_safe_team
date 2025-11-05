@@ -1,13 +1,39 @@
 /* QR Result Cards Styles */
 
+/* Контейнер для результатов */
+#result-container {
+  min-height: 100px;
+  position: relative;
+}
+
 /* Индикатор загрузки с анимацией */
 .qr-loading-indicator {
+  display: none;
   opacity: 0;
   transition: opacity 0.3s ease-in-out;
+  padding: 20px;
+  visibility: visible;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background-color: rgba(248, 249, 250, 0.8);
+  border-radius: 8px;
 }
 
 .qr-loading-indicator.qr-loading-show {
-  opacity: 1;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Стили для Bootstrap спиннера */
+.qr-loading-indicator .spinner-border {
+  width: 3rem;
+  height: 3rem;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 /* Базовые стили карточек результатов */
@@ -15,15 +41,9 @@
   padding: 20px 24px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
   border-left: 4px solid;
-}
-
-.qr-result-card.qr-result-show {
-  opacity: 1;
-  transform: translateY(0);
+  position: relative;
+  z-index: 5;
 }
 
 /* Карточка успеха (зеленая) */

@@ -59,39 +59,42 @@
                 <small class="form-text text-muted mt-2 d-block">Можно вставить текст QR-кода или отсканировать его</small>
               </div>
 
-              <!-- Индикатор загрузки -->
-              <div id="loading-indicator" class="qr-loading-indicator mb-4" style="display: none;">
-                <div class="text-center">
-                  <div class="spinner-border text-primary" role="status" aria-hidden="true">
-                    <span class="visually-hidden">Загрузка...</span>
-                  </div>
-                  <p class="mt-2 text-muted small">Проверка QR-кода...</p>
-                </div>
-              </div>
-
-              <!-- Результат проверки - карточка успеха -->
-              <div id="result-card-success" class="qr-result-card qr-result-success mb-4" style="display: none;" role="alert">
-                <div class="d-flex align-items-start">
-                  <div class="qr-result-icon me-3">
-                    <i class="bi bi-check-circle-fill"></i>
-                  </div>
-                  <div class="flex-grow-1">
-                    <h5 class="mb-2">Доступ разрешён</h5>
-                    <p class="mb-0" id="result-success-message"></p>
-                    <div id="result-success-details" class="mt-3"></div>
+              <!-- Контейнер для индикатора загрузки и результатов -->
+              <div id="result-container" class="mb-4">
+                <!-- Индикатор загрузки -->
+                <div id="loading-indicator" class="qr-loading-indicator" style="display: none;">
+                  <div class="text-center w-100">
+                    <div class="spinner-border text-primary" role="status" aria-hidden="true">
+                      <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2 text-muted small mb-0">Проверка QR-кода...</p>
                   </div>
                 </div>
-              </div>
 
-              <!-- Результат проверки - карточка отказа -->
-              <div id="result-card-error" class="qr-result-card qr-result-error mb-4" style="display: none;" role="alert">
-                <div class="d-flex align-items-start">
-                  <div class="qr-result-icon me-3">
-                    <i class="bi bi-x-circle-fill"></i>
+                <!-- Результат проверки - карточка успеха -->
+                <div id="result-card-success" class="qr-result-card qr-result-success" style="display: none;" role="alert">
+                  <div class="d-flex align-items-start">
+                    <div class="qr-result-icon me-3">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <h5 class="mb-2">Доступ разрешён</h5>
+                      <p class="mb-0" id="result-success-message"></p>
+                      <div id="result-success-details" class="mt-3"></div>
+                    </div>
                   </div>
-                  <div class="flex-grow-1">
-                    <h5 class="mb-2">Доступ запрещён</h5>
-                    <p class="mb-0" id="result-error-message"></p>
+                </div>
+
+                <!-- Результат проверки - карточка отказа -->
+                <div id="result-card-error" class="qr-result-card qr-result-error" style="display: none;" role="alert">
+                  <div class="d-flex align-items-start">
+                    <div class="qr-result-icon me-3">
+                      <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <h5 class="mb-2">Доступ запрещён</h5>
+                      <p class="mb-0" id="result-error-message"></p>
+                    </div>
                   </div>
                 </div>
               </div>
