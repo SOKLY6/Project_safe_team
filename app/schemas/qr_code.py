@@ -27,3 +27,8 @@ class QRCodeActiveResponse(BaseModel):
     created_at: datetime
     expires_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class QRCodeVerify(BaseModel):
+    qr_data: str
+    scanner_id: str

@@ -42,9 +42,7 @@ async def create_qr_code(
     return qr_code
 
 
-async def get_active_qr_code(
-    user_id: int, db: AsyncSession
-) -> QRCode | None:
+async def get_active_qr_code(user_id: int, db: AsyncSession) -> QRCode | None:
     result = await db.execute(
         select(QRCode)
         .where(

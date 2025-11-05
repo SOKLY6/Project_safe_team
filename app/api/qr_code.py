@@ -12,11 +12,13 @@ from app.schemas.qr_code import (
     QRCodeActiveResponse,
     QRCodeCreate,
     QRCodeResponse,
+    QRCodeVerify,
 )
 from app.services.qr_service import (
     create_qr_code,
     get_active_qr_code,
 )
+from app.services.verification_service import verify_qr_code
 
 
 router = APIRouter(prefix='/qr', tags=['QR Verification'])
@@ -38,9 +40,7 @@ async def generate_qr(
 async def get_active(user_id: int, db: AsyncSession = Depends(get_db)):
     qr_code = await get_active_qr_code(user_id, db)
     if not qr_code:
-        raise HTTPException(
-            status_code=404, detail='No active QR code found'
-        )
+        raise HTTPException(status_code=404, detail='No active QR code found')
     return qr_code
 
 
@@ -71,72 +71,12 @@ async def update_qr(
     return qr_code
 
 
-@router.get('/verify/{token}')
-async def verify_qr(token: str, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(QRCode).filter(QRCode.code == token))
-    qr_token = result.scalar_one_or_none()
-
-    if not qr_token:
-        return {'status': 'denied', 'reason': 'Token not found'}
-
-    if qr_token.used:
-        log_entry = AccessLog(
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
-            access_granted=False,
-            reason='Token already used',
-        )
-        db.add(log_entry)
-        await db.commit()
-        return {'status': 'denied', 'reason': 'Token already used'}
-
-    if qr_token.expires_at < datetime.now().replace(tzinfo=None):
-        log_entry = AccessLog(
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
-            access_granted=False,
-            reason='Token expired',
-        )
-        db.add(log_entry)
-        await db.commit()
-        return {'status': 'denied', 'reason': 'Token expired'}
-
-    user_result = await db.execute(
-        select(User).filter(User.id == qr_token.user_id)
-    )
-    user = user_result.scalar_one_or_none()
-
-    if not user:
-        log_entry = AccessLog(
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
-            access_granted=False,
-            reason='User not found',
-        )
-        db.add(log_entry)
-        await db.commit()
-        return {'status': 'denied', 'reason': 'User not found'}
-
-    qr_token.used = True
-
-    log_entry = AccessLog(
-        user_id=user.id,
-        organization_id=qr_token.organization_id,
-        qr_code_id=qr_token.id,
-        access_granted=True,
-    )
-    db.add(log_entry)
-    await db.commit()
-
-    return {
-        'status': 'allowed',
-        'name': user.name,
-        'organization_id': user.organization_id,
-        'telegram_id': user.telegram_id,
-    }
+@router.post('/verify')
+async def verify_qr_endpoint(
+    request: QRCodeVerify, db: AsyncSession = Depends(get_db)
+):
+    result = await verify_qr_code(request.qr_data, request.scanner_id, db)
+    return result
 
 
 @router.get('/active', response_model=list[QRCodeActiveResponse])
