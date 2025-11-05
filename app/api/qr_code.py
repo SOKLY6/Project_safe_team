@@ -18,8 +18,8 @@ from app.services.qr_service import (
     create_qr_code,
     get_active_qr_code,
 )
+from app.services.scanner_service import verify_qr_code_fast
 from app.services.verification_service import verify_qr_code
-
 
 router = APIRouter(prefix='/qr', tags=['QR Verification'])
 
@@ -124,3 +124,11 @@ async def delete_qr(qr_id: int, db: AsyncSession = Depends(get_db)):
     await db.delete(qr_code)
     await db.commit()
     return {'status': 'success', 'message': 'QR code deleted'}
+
+
+@router.post('/scanner/verify')
+async def verify_qr_scanner(
+    request: QRCodeVerify, db: AsyncSession = Depends(get_db)
+):
+    result = await verify_qr_code_fast(request.qr_data, request.scanner_id, db)
+    return result
