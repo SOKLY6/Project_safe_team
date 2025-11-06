@@ -5,12 +5,11 @@ from app.api.organizations import router as orgs_router
 from app.api.qr_code import router as qr_code_router
 from app.api.users import router as users_router
 from app.api.access_log import router as access_log_router
-from app.api.ws import router as ws_router
 
 router: APIRouter = APIRouter()
+# WebSocket роутер подключается напрямую в main.py, чтобы избежать проблем с маршрутизацией
 router.include_router(users_router)
 router.include_router(orgs_router)
 router.include_router(qr_code_router)
 router.include_router(health_router)
 router.include_router(access_log_router)
-router.include_router(ws_router)

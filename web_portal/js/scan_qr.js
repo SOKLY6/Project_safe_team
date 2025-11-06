@@ -276,9 +276,30 @@
           }
         }
 
+        // Переводим сообщение на русский, если оно на английском
+        let message = data.message || '';
+        
+        // Если сообщение пустое или содержит только "Access granted", устанавливаем стандартное сообщение
+        if (!message || message.toLowerCase().trim() === 'access granted') {
+          message = 'QR-код действителен. Доступ разрешён.';
+        } else {
+          // Заменяем "Access granted" на пустую строку, если оно есть в начале или конце
+          message = message.replace(/^\s*access\s+granted\s*[.,]?\s*/gi, '');
+          message = message.replace(/\s*[.,]?\s*access\s+granted\s*$/gi, '');
+          message = message.trim();
+          
+          // Если после удаления "Access granted" сообщение пустое, используем стандартное
+          if (!message) {
+            message = 'QR-код действителен. Доступ разрешён.';
+          } else {
+            // Если сообщение не пустое, добавляем стандартное в начало
+            message = 'QR-код действителен. Доступ разрешён. ' + message;
+          }
+        }
+        
         return {
           success: true,
-          message: data.message || 'QR-код действителен. Доступ разрешён.',
+          message: message,
           data: {
             user_id: userInfo.id,
             name: userInfo.name,
@@ -347,12 +368,18 @@
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
     
-    const statusResult = result.success ? "разрешён" : "запрещён";
-    showResult(result.success, result.message, result.data);
+    // Используем сообщение напрямую (оно уже обработано в checkQRCode)
+    let displayMessage = result.message || 'QR-код действителен. Доступ разрешён.';
     
-    // Сохраняем в историю
+    // Убираем возможные дублирования "Доступ разрешён"
+    displayMessage = displayMessage.replace(/(Доступ разрешён\.?\s*){2,}/gi, 'Доступ разрешён.');
+    displayMessage = displayMessage.trim();
+    
+    showResult(result.success, displayMessage, result.data);
+    
+    // Сохраняем в историю (используем переведенное сообщение без дублирования)
     const user = result.data?.user; // Безопасное получение user
-    saveToHistory(qrCode, result.success, result.message + ` Доступ ${statusResult}.`, result.data, user);
+    saveToHistory(qrCode, result.success, displayMessage, result.data, user);
   });
 
   // Обработка кнопки очистки
@@ -523,7 +550,18 @@
       const statusText = item.success ? 'Успех' : 'Отказ';
       
       const escapedQrCode = escapeHtml(item.qrCode);
-      const escapedMessage = escapeHtml(item.message);
+      
+      // Переводим сообщение на русский, если оно содержит английский текст
+      let displayMessage = item.message || '';
+      // Полностью заменяем "Access granted" на русский текст
+      displayMessage = displayMessage.replace(/access\s+granted/gi, 'QR-код действителен. Доступ разрешён.');
+      // Убираем возможные дублирования
+      displayMessage = displayMessage.replace(/QR-код действителен\. Доступ разрешён\.\s*QR-код действителен\. Доступ разрешён\./gi, 'QR-код действителен. Доступ разрешён.');
+      displayMessage = displayMessage.trim();
+      if (!displayMessage) {
+        displayMessage = 'QR-код действителен. Доступ разрешён.';
+      }
+      const escapedMessage = escapeHtml(displayMessage);
       
       listItem.innerHTML = `
         <div class="d-flex align-items-start">
@@ -541,7 +579,7 @@
               <i class="bi ${statusIcon} me-1"></i>${statusText}
             </div>
             <div class="small text-muted text-truncate" title="${escapedMessage}">
-              ${escapeHtml(truncateText(item.message, 80))}
+              ${escapeHtml(truncateText(displayMessage, 80))}
             </div>
             ${item.user ? `<div class="small text-muted text-truncate" title="${escapeHtml(item.user)}">
               <strong>Пользователь:</strong> ${escapeHtml(truncateText(item.user, 80))}
@@ -562,19 +600,30 @@
         </div>
       `;
       
-      // Обработчик клика на элементе
+      // Обработчик клика на элементе (только если клик не на кнопках)
       listItem.addEventListener('click', function(e) {
-        if (!e.target.closest('.qr-history-use-btn') && !e.target.closest('.qr-history-delete-btn')) {
+        // Проверяем, что клик не на кнопках и не на их иконках
+        const target = e.target;
+        const isButton = target.closest('.qr-history-use-btn') || 
+                        target.closest('.qr-history-delete-btn') ||
+                        target.classList.contains('bi-arrow-return-left') ||
+                        target.classList.contains('bi-x') ||
+                        target.tagName === 'BUTTON';
+        if (!isButton) {
           useFromHistory(item.qrCode);
         }
       });
       
       // Обработчик кнопки "Использовать"
       const useBtn = listItem.querySelector('.qr-history-use-btn');
-      useBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        useFromHistory(item.qrCode);
-      });
+      if (useBtn) {
+        useBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          useFromHistory(item.qrCode);
+          return false;
+        });
+      }
       
       // Обработчик кнопки "Удалить"
       const deleteBtn = listItem.querySelector('.qr-history-delete-btn');
@@ -589,12 +638,14 @@
 
   function useFromHistory(qrCode) {
     qrInput.value = qrCode;
-    qrInput.focus();
     clearError();
     hideResults();
     
-    // Плавная прокрутка к полю ввода
-    qrInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Плавная прокрутка к полю ввода (используем setTimeout для корректной работы)
+    setTimeout(() => {
+      qrInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      qrInput.focus();
+    }, 100);
   }
 
   function deleteHistoryItem(qrCode) {
