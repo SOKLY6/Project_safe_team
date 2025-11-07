@@ -74,11 +74,11 @@
       const uVal = username.value.trim();
       const pVal = password.value;
       if (uVal !== MOCK_LOGIN) {
-        showError(username, usernameError, 'Данные не совпадают');
+        showError(username, usernameError, 'Неизвестный логин');
         return;
       }
       if (pVal !== MOCK_PASSWORD) {
-        showError(password, passwordError, 'Пароль не совпадает');
+        showError(password, passwordError, 'Неизвестный пароль');
         return;
       }
       window.location.href = 'dashboard.html';
@@ -102,15 +102,13 @@
         try { data = await response.json(); } catch (_) {}
         const code = (data && (data.code || data.error || data.detail)) || '';
         if (String(code).toUpperCase().includes('WRONG_PASSWORD')) {
-          showError(password, passwordError, 'Пароль не совпадает');
+          showError(password, passwordError, 'Неизвестный пароль');
           return;
         }
         if (String(code).toUpperCase().includes('INVALID_LOGIN')) {
-          showError(username, usernameError, 'Данные не совпадают');
+          showError(username, usernameError, 'Неизвестный логин');
           return;
         }
-        showError(username, usernameError, 'Данные не совпадают');
-        return;
       }
 
       showError(password, passwordError, 'Ошибка сервера. Повторите позже');

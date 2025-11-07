@@ -18,11 +18,10 @@
   const API_BASE_URL = window.location.origin.replace(':8001', ':8000') || 'http://localhost:8000';
   const USE_MOCK_API = false; // Переключаем на реальный API
 
-  // История проверок
+
   const HISTORY_KEY = 'qr_scan_history';
   const MAX_HISTORY_ITEMS = 10;
-  
-  // Элементы истории
+
   const toggleHistoryBtn = document.getElementById('toggle-history');
   const historyChevron = document.getElementById('history-chevron');
   const historyContainer = document.getElementById('history-container');

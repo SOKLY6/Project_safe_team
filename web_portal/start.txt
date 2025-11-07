@@ -1,0 +1,17 @@
+Минимальные шаги для запуска:
+
+# 1. Применение миграций БД
+alembic upgrade head
+
+# 2. Запуск сервера
+make run
+
+Сервер будет доступен на: http://localhost:8000
+
+
+Для веб-портала (в отдельном терминале):
+
+cd web_portal
+python3 -m http.server 8001
+
+Веб-портал: http://localhost:8001/login.html
