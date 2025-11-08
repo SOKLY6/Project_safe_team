@@ -10,9 +10,14 @@ lint:
 	mypy .
 
 .PHONY: runserver
-run:
+runserver:
 	@echo "Запуск сервера uvicorn..."
-	uvicorn app.main:app --reload
+	uvicorn app.main:app --reload &
+
+.PHONY: stopserver
+stopserver:
+	@echo "Прерывание работы сервера"
+	pkill -f uvicorn
 
 .PHONY: migrate
 migrate:
@@ -20,5 +25,7 @@ migrate:
 	alembic upgrade head
 
 .PHONY: runhttp
+runhttp:
 	@echo "Запуск сайта..."
-	python3 -m http.server 8001
+	@cd web_portal && python3 -m http.server 8001 --bind 127.0.0.1
+
