@@ -2,7 +2,19 @@
   'use strict';
 
   // API конфигурация
-  const API_BASE_URL = window.location.origin.replace(':8001', ':8000') || 'http://localhost:8000';
+  // Используем hostname из текущего URL, чтобы работать на других устройствах
+  // Если сайт открыт по IP (например, http://192.168.1.100:8001), то API будет на том же IP
+  const getApiBaseUrl = () => {
+    const origin = window.location.origin;
+    const hostname = window.location.hostname;
+    const port = window.location.port === '8001' ? '8000' : (window.location.port || '8000');
+    const protocol = window.location.protocol;
+    
+    // Если hostname - localhost, оставляем как есть (для локальной разработки)
+    // Если hostname - IP-адрес, используем его (для работы на других устройствах)
+    return `${protocol}//${hostname}:${port}`;
+  };
+  const API_BASE_URL = getApiBaseUrl();
   const ITEMS_PER_PAGE = 50;
   const SCROLL_THRESHOLD = 200; // Загружать следующую страницу за 200px до конца
 
@@ -44,22 +56,11 @@
     searchName: ''
   };
 
-  // WebSocket состояние
-  let ws = null;
-  let wsReconnectAttempts = 0;
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const RECONNECT_DELAY = 3000; // 3 секунды
-  let newEventsCount = 0;
-
-  // Элементы WebSocket
-  const newEventsIndicator = document.getElementById('new-events-indicator');
-  const newEventsCountSpan = document.getElementById('new-events-count');
 
   // Инициализация
   document.addEventListener('DOMContentLoaded', function() {
     loadOrganizations();
     loadEvents();
-    connectWebSocket();
     
     // Обработчики событий
     refreshBtn.addEventListener('click', refreshEvents);
@@ -70,14 +71,6 @@
     
     // Бесконечный скролл
     window.addEventListener('scroll', handleScroll);
-
-    // Обработчик для индикатора новых событий (клик обновляет список)
-    if (newEventsIndicator) {
-      newEventsIndicator.addEventListener('click', function() {
-        refreshEvents();
-        resetNewEventsCount();
-      });
-    }
   });
 
   // Обработка скролла для бесконечной загрузки
@@ -382,7 +375,6 @@
 
   // Обновление событий
   function refreshEvents() {
-    resetNewEventsCount();
     loadEvents();
   }
 
@@ -527,207 +519,6 @@
     };
   }
 
-  // WebSocket подключение
-  let pingInterval = null;
-  
-  function connectWebSocket() {
-    // Формируем WebSocket URL на основе API_BASE_URL для работы на других устройствах
-    const apiUrl = new URL(API_BASE_URL);
-    const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = apiUrl.hostname;
-    const wsPort = apiUrl.port || '8000';
-    const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}/ws/events`;
-
-    console.log('Попытка подключения к WebSocket:', wsUrl);
-
-    try {
-      // Закрываем предыдущее соединение, если оно есть
-      if (ws && ws.readyState !== WebSocket.CLOSED) {
-        ws.close();
-      }
-      
-      // Очищаем предыдущий интервал ping
-      if (pingInterval) {
-        clearInterval(pingInterval);
-        pingInterval = null;
-      }
-      
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = function() {
-        console.log('WebSocket подключен успешно:', wsUrl);
-        console.log('WebSocket readyState:', ws.readyState, '(1 = OPEN)');
-        console.log('WebSocket protocol:', ws.protocol);
-        console.log('WebSocket extensions:', ws.extensions);
-        wsReconnectAttempts = 0;
-        
-        // Отправляем ping для поддержания соединения каждые 30 секунд
-        pingInterval = setInterval(() => {
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'ping' }));
-            console.log('Ping отправлен для поддержания соединения');
-          } else {
-            clearInterval(pingInterval);
-            pingInterval = null;
-          }
-        }, 30000);
-        
-        // Отправляем первый ping сразу
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'ping' }));
-          console.log('Первый ping отправлен');
-        }
-      };
-
-      ws.onmessage = function(event) {
-        console.log('Получено сообщение через WebSocket:', event.data);
-        try {
-          const data = JSON.parse(event.data);
-          console.log('Парсинг успешен:', data);
-          // Игнорируем ping/pong сообщения
-          if (data.type === 'pong') {
-            console.log('Получен pong от сервера');
-            return;
-          }
-          handleWebSocketEvent(data);
-        } catch (e) {
-          console.error('Ошибка парсинга WebSocket сообщения:', e, event.data);
-        }
-      };
-
-      ws.onerror = function(error) {
-        console.error('WebSocket ошибка:', error);
-        console.error('URL:', wsUrl);
-        console.error('readyState:', ws ? ws.readyState : 'undefined');
-        console.error('Проверьте, что сервер запущен на порту 8000 и поддерживает WebSocket');
-      };
-
-      ws.onclose = function(event) {
-        console.log('WebSocket отключен. Код:', event.code, 'Причина:', event.reason || 'не указана');
-        console.log('wasClean:', event.wasClean);
-        
-        // Очищаем интервал ping
-        if (pingInterval) {
-          clearInterval(pingInterval);
-          pingInterval = null;
-        }
-        
-        // Попытка переподключения (только если это не была нормальное закрытие)
-        if (!event.wasClean && wsReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          wsReconnectAttempts++;
-          console.log(`Попытка переподключения ${wsReconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} через ${RECONNECT_DELAY}мс`);
-          setTimeout(connectWebSocket, RECONNECT_DELAY);
-        } else if (wsReconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.log('Достигнуто максимальное количество попыток переподключения');
-          console.log('Проверьте, что сервер запущен и доступен на', wsUrl);
-        }
-      };
-    } catch (e) {
-      console.error('Ошибка создания WebSocket подключения:', e);
-    }
-  }
-
-  // Обработка события от WebSocket
-  function handleWebSocketEvent(data) {
-    console.log('Получено событие через WebSocket:', data);
-    
-    // Ожидаем, что данные содержат новое событие доступа
-    // Формат: { type: 'access_log', id, timestamp, user_id, user_name, organization_id, organization_name, ... }
-    if (data.type === 'access_log') {
-      console.log('Новое событие доступа получено через WebSocket:', data);
-      
-      // Добавляем scanner_name для совместимости
-      const newEvent = {
-        ...data,
-        scanner_name: data.scanner_id || 'Не указана',
-        user_name: data.user_name || 'Неизвестно',
-        organization_name: data.organization_name || 'Не указана'
-      };
-      
-      // Добавляем новое событие наверх списка
-      allEvents.unshift(newEvent);
-      console.log('Событие добавлено в список. Всего событий:', allEvents.length);
-      
-      // Если событие соответствует текущим фильтрам, обновляем отображение
-      const shouldShow = matchesFilters(newEvent);
-      console.log('Событие соответствует фильтрам:', shouldShow);
-      
-      if (shouldShow) {
-        // Обновляем отфильтрованные события
-        applyFilters();
-        newEventsCount++;
-        updateNewEventsIndicator();
-        console.log('Таблица обновлена. Новых событий:', newEventsCount);
-      } else {
-        // Событие не соответствует фильтрам, но все равно увеличиваем счетчик
-        newEventsCount++;
-        updateNewEventsIndicator();
-        console.log('Событие не соответствует фильтрам, но счетчик обновлен. Новых событий:', newEventsCount);
-      }
-    } else {
-      console.log('Получено событие неизвестного типа:', data.type);
-    }
-  }
-
-  // Проверка, соответствует ли событие текущим фильтрам
-  function matchesFilters(event) {
-    // Проверка даты
-    if (currentFilters.dateFrom) {
-      const eventDate = new Date(event.timestamp);
-      const fromDate = new Date(currentFilters.dateFrom);
-      fromDate.setHours(0, 0, 0, 0);
-      if (eventDate < fromDate) return false;
-    }
-
-    if (currentFilters.dateTo) {
-      const eventDate = new Date(event.timestamp);
-      const toDate = new Date(currentFilters.dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      if (eventDate > toDate) return false;
-    }
-
-    // Проверка статуса
-    if (currentFilters.status !== 'all') {
-      const expectedStatus = currentFilters.status === 'granted';
-      if (event.access_granted !== expectedStatus) return false;
-    }
-
-    // Проверка организации
-    if (currentFilters.organization !== 'all') {
-      const orgId = parseInt(currentFilters.organization);
-      if (event.organization_id !== orgId) return false;
-    }
-
-    // Проверка поиска по ФИО
-    if (currentFilters.searchName) {
-      const searchTerm = currentFilters.searchName.toLowerCase();
-      const userName = (event.user_name || '').toLowerCase();
-      if (!userName.includes(searchTerm)) return false;
-    }
-
-    return true;
-  }
-
-
-  // Обновление индикатора новых событий
-  function updateNewEventsIndicator() {
-    if (!newEventsIndicator || !newEventsCountSpan) return;
-
-    if (newEventsCount > 0) {
-      newEventsCountSpan.textContent = newEventsCount;
-      newEventsIndicator.style.display = 'inline-flex';
-      newEventsIndicator.style.cursor = 'pointer';
-      newEventsIndicator.title = 'Нажмите, чтобы обновить список';
-    } else {
-      newEventsIndicator.style.display = 'none';
-    }
-  }
-
-  // Сброс счетчика новых событий
-  function resetNewEventsCount() {
-    newEventsCount = 0;
-    updateNewEventsIndicator();
-  }
 
 })();
 

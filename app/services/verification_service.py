@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.ws import notify_all_clients
 from app.models.access_log import AccessLog
 from app.models.organization import Organization
 from app.models.qr_code import QRCode
@@ -219,19 +218,3 @@ async def db_add_log(
             select(Organization).where(Organization.id == organization_id)
         )
         org = org_result.scalar_one_or_none()
-
-    await notify_all_clients(
-        {
-            'type': 'access_log',
-            'id': log_entry.id,
-            'timestamp': log_entry.timestamp.isoformat(),
-            'user_id': user_id,
-            'user_name': user.name if user else None,
-            'organization_id': organization_id,
-            'organization_name': org.name if org else None,
-            'qr_code_id': qr_code_id,
-            'scanner_id': scanner_id,
-            'access_granted': access_granted,
-            'reason': reason,
-        }
-    )

@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.base import router as all_routers
-from app.api.ws import router as ws_router
 from app.database import Base, engine
 
 
@@ -17,8 +16,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title='QR Access System', lifespan=lifespan)
 
-# WebSocket роутер должен быть подключен ДО CORS middleware, чтобы избежать проблем
-app.include_router(ws_router)
 app.include_router(all_routers)
 
 app.add_middleware(

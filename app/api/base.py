@@ -7,7 +7,6 @@ from app.api.users import router as users_router
 from app.api.access_log import router as access_log_router
 
 router: APIRouter = APIRouter()
-# WebSocket роутер подключается напрямую в main.py, чтобы избежать проблем с маршрутизацией
 router.include_router(users_router)
 router.include_router(orgs_router)
 router.include_router(qr_code_router)
