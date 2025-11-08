@@ -531,10 +531,11 @@
   let pingInterval = null;
   
   function connectWebSocket() {
-    // Формируем WebSocket URL
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = window.location.hostname;
-    const wsPort = window.location.port === '8001' ? '8000' : window.location.port || '8000';
+    // Формируем WebSocket URL на основе API_BASE_URL для работы на других устройствах
+    const apiUrl = new URL(API_BASE_URL);
+    const wsProtocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = apiUrl.hostname;
+    const wsPort = apiUrl.port || '8000';
     const wsUrl = `${wsProtocol}//${wsHost}:${wsPort}/ws/events`;
 
     console.log('Попытка подключения к WebSocket:', wsUrl);
@@ -554,17 +555,17 @@
       ws = new WebSocket(wsUrl);
 
       ws.onopen = function() {
-        console.log('✅ WebSocket подключен успешно:', wsUrl);
-        console.log('✅ WebSocket readyState:', ws.readyState, '(1 = OPEN)');
-        console.log('✅ WebSocket protocol:', ws.protocol);
-        console.log('✅ WebSocket extensions:', ws.extensions);
+        console.log('WebSocket подключен успешно:', wsUrl);
+        console.log('WebSocket readyState:', ws.readyState, '(1 = OPEN)');
+        console.log('WebSocket protocol:', ws.protocol);
+        console.log('WebSocket extensions:', ws.extensions);
         wsReconnectAttempts = 0;
         
         // Отправляем ping для поддержания соединения каждые 30 секунд
         pingInterval = setInterval(() => {
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ping' }));
-            console.log('✅ Ping отправлен для поддержания соединения');
+            console.log('Ping отправлен для поддержания соединения');
           } else {
             clearInterval(pingInterval);
             pingInterval = null;
@@ -574,36 +575,36 @@
         // Отправляем первый ping сразу
         if (ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'ping' }));
-          console.log('✅ Первый ping отправлен');
+          console.log('Первый ping отправлен');
         }
       };
 
       ws.onmessage = function(event) {
-        console.log('📨 Получено сообщение через WebSocket:', event.data);
+        console.log('Получено сообщение через WebSocket:', event.data);
         try {
           const data = JSON.parse(event.data);
-          console.log('📨 Парсинг успешен:', data);
+          console.log('Парсинг успешен:', data);
           // Игнорируем ping/pong сообщения
           if (data.type === 'pong') {
-            console.log('✅ Получен pong от сервера');
+            console.log('Получен pong от сервера');
             return;
           }
           handleWebSocketEvent(data);
         } catch (e) {
-          console.error('❌ Ошибка парсинга WebSocket сообщения:', e, event.data);
+          console.error('Ошибка парсинга WebSocket сообщения:', e, event.data);
         }
       };
 
       ws.onerror = function(error) {
-        console.error('❌ WebSocket ошибка:', error);
-        console.error('❌ URL:', wsUrl);
-        console.error('❌ readyState:', ws ? ws.readyState : 'undefined');
-        console.error('❌ Проверьте, что сервер запущен на порту 8000 и поддерживает WebSocket');
+        console.error('WebSocket ошибка:', error);
+        console.error('URL:', wsUrl);
+        console.error('readyState:', ws ? ws.readyState : 'undefined');
+        console.error('Проверьте, что сервер запущен на порту 8000 и поддерживает WebSocket');
       };
 
       ws.onclose = function(event) {
-        console.log('⚠️ WebSocket отключен. Код:', event.code, 'Причина:', event.reason || 'не указана');
-        console.log('⚠️ wasClean:', event.wasClean);
+        console.log('WebSocket отключен. Код:', event.code, 'Причина:', event.reason || 'не указана');
+        console.log('wasClean:', event.wasClean);
         
         // Очищаем интервал ping
         if (pingInterval) {
@@ -614,11 +615,11 @@
         // Попытка переподключения (только если это не была нормальное закрытие)
         if (!event.wasClean && wsReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
           wsReconnectAttempts++;
-          console.log(`🔄 Попытка переподключения ${wsReconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} через ${RECONNECT_DELAY}мс`);
+          console.log(`Попытка переподключения ${wsReconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} через ${RECONNECT_DELAY}мс`);
           setTimeout(connectWebSocket, RECONNECT_DELAY);
         } else if (wsReconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-          console.log('❌ Достигнуто максимальное количество попыток переподключения');
-          console.log('❌ Проверьте, что сервер запущен и доступен на', wsUrl);
+          console.log('Достигнуто максимальное количество попыток переподключения');
+          console.log('Проверьте, что сервер запущен и доступен на', wsUrl);
         }
       };
     } catch (e) {

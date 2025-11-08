@@ -163,3 +163,15 @@ qr-access-system/
   ```uv sync```
 
   ```source .venv/bin/activate```
+
+### Настройка сервера и сайта:
+```make runserver```
+```cd web_portal```
+```make runhttp```
+
+Если порт занят, то 
+```lsof -ti :8000```
+```kill <n>```
+
+
+
