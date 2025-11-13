@@ -1,7 +1,7 @@
-from Project_safe_team.app.database import async_session
-from Project_safe_team.app.models.organization import Organization
-from Project_safe_team.app.models.user import User
-from Project_safe_team.telegram_bot.keyboards.main_menu import (
+from app.database import async_session
+from app.models.organization import Organization
+from app.models.user import User
+from telegram_bot.keyboards.main_menu import (
     get_main_keyboard,
 )
 from sqlalchemy import select
