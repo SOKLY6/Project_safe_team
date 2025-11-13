@@ -29,3 +29,8 @@ runhttp:
 	@echo "Запуск сайта..."
 	@cd web_portal && python3 -m http.server 8001 --bind 127.0.0.1
 
+.PHONY: runbot
+runbot:
+	@echo "Запуск бота..."
+	python3 -m telegram_bot.main
+
