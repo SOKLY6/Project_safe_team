@@ -1,13 +1,11 @@
 import os
 
-from dotenv import load_dotenv
-from handlers.common import setup_common_handlers
-from handlers.start import setup_start_handlers
-from Project_safe_team.app.database import Base, engine
-from services.utils import setup_logging
+from decouple import config
+from telegram_bot.handlers.common import setup_common_handlers
+from telegram_bot.handlers.start import setup_start_handlers
+from app.database import Base, engine
+from telegram_bot.services.utils import setup_logging
 from telegram.ext import Application
-
-load_dotenv()
 
 
 async def init_db():
@@ -23,7 +21,7 @@ async def post_init(application: Application):
 def main():
     setup_logging()
 
-    BOT_TOKEN = os.getenv('BOT_TOKEN')
+    BOT_TOKEN = config('BOT_TOKEN')
     if not BOT_TOKEN:
         raise ValueError('BOT_TOKEN не найден. Проверьте файл .env')
 

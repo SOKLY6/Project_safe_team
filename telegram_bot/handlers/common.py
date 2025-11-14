@@ -4,9 +4,9 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import qrcode
-from Project_safe_team.app.database import async_session
-from Project_safe_team.app.models.qr_code import QRCode
-from Project_safe_team.app.models.user import User
+from app.database import async_session
+from app.models.qr_code import QRCode
+from app.models.user import User
 from sqlalchemy import select
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
@@ -49,7 +49,10 @@ async def show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         active_qr = sum(
             1
             for qr in qr_codes
-            if not qr.used and qr.expires_at > datetime.now(timezone.utc)
+            if not qr.used and (
+                    (qr.expires_at.replace(tzinfo=timezone.utc) if qr.expires_at.tzinfo is None else qr.expires_at)
+                    > datetime.now(timezone.utc)
+            )
         )
 
         stats_text = f"""
@@ -80,7 +83,7 @@ async def qr_generation(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         token = secrets.token_urlsafe(32)
-        lifetime = int(os.getenv('QR_LIFETIME_MINUTES', '10'))
+        lifetime = int(os.getenv('QR_LIFETIME_MINUTES', '1'))
         expires = datetime.now(timezone.utc) + timedelta(minutes=lifetime)
 
         qr_code_record = QRCode(
@@ -104,7 +107,7 @@ async def qr_generation(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_photo(
             photo=bio,
-            caption=f'✅ QR-код действителен {lifetime} минут\nИмя: {user.name}',
+            caption=f'✅ QR-код действителен {lifetime} минуту\nИмя: {user.name}',
         )
 
 
