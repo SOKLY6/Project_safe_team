@@ -1,9 +1,3 @@
-from app.database import async_session
-from app.models.organization import Organization
-from app.models.user import User
-from telegram_bot.keyboards.main_menu import (
-    get_main_keyboard,
-)
 from sqlalchemy import select
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import (
@@ -12,6 +6,13 @@ from telegram.ext import (
     ConversationHandler,
     MessageHandler,
     filters,
+)
+
+from app.database import async_session
+from app.models.organization import Organization
+from app.models.user import User
+from telegram_bot.keyboards.main_menu import (
+    get_main_keyboard,
 )
 
 WAITING_FOR_NAME, WAITING_FOR_ORG = range(2)
