@@ -1,11 +1,10 @@
-import os
-
 from decouple import config
+from telegram.ext import Application
+
+from app.database import Base, engine
 from telegram_bot.handlers.common import setup_common_handlers
 from telegram_bot.handlers.start import setup_start_handlers
-from app.database import Base, engine
 from telegram_bot.services.utils import setup_logging
-from telegram.ext import Application
 
 
 async def init_db():

@@ -12,7 +12,7 @@ lint:
 .PHONY: runserver
 runserver:
 	@echo "Запуск сервера uvicorn..."
-	uvicorn app.main:app --reload &
+	uvicorn app.main:app --reload
 
 .PHONY: stopserver
 stopserver:

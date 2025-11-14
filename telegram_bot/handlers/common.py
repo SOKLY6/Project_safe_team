@@ -4,12 +4,13 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import qrcode
-from app.database import async_session
-from app.models.qr_code import QRCode
-from app.models.user import User
 from sqlalchemy import select
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes, MessageHandler, filters
+
+from app.database import async_session
+from app.models.qr_code import QRCode
+from app.models.user import User
 
 
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -49,9 +50,14 @@ async def show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         active_qr = sum(
             1
             for qr in qr_codes
-            if not qr.used and (
-                    (qr.expires_at.replace(tzinfo=timezone.utc) if qr.expires_at.tzinfo is None else qr.expires_at)
-                    > datetime.now(timezone.utc)
+            if not qr.used
+            and (
+                (
+                    qr.expires_at.replace(tzinfo=timezone.utc)
+                    if qr.expires_at.tzinfo is None
+                    else qr.expires_at
+                )
+                > datetime.now(timezone.utc)
             )
         )
 

@@ -6,7 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.access_log import AccessLog
-from app.models.organization import Organization
 from app.models.qr_code import QRCode
 from app.models.user import User
 
@@ -205,16 +204,3 @@ async def db_add_log(
     db.add(log_entry)
     await db.commit()
     await db.refresh(log_entry)
-
-    user = None
-    org = None
-
-    if user_id:
-        user_result = await db.execute(select(User).where(User.id == user_id))
-        user = user_result.scalar_one_or_none()
-
-    if organization_id:
-        org_result = await db.execute(
-            select(Organization).where(Organization.id == organization_id)
-        )
-        org = org_result.scalar_one_or_none()
