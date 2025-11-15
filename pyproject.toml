@@ -26,7 +26,6 @@ dependencies = [
 dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.13.2",
-    "mypy>=1.18.2",
     "pytest>=8.4.2",
     "fastapi>=0.104.1",
     "uvicorn>=0.24.0",
