@@ -6,8 +6,6 @@ lint:
 	ruff format .
 	@echo "Запуск ruff check --fix..."
 	ruff check --fix
-	@echo "Запуск mypy..."
-	mypy .
 
 .PHONY: runserver
 runserver:

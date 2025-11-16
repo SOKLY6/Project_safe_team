@@ -15,9 +15,6 @@ from sqlalchemy.exc import IntegrityError
 from app.models.organization import Organization
 
 
-# ======================================================
-# 1️⃣ Тест: успешное создание организации
-# ======================================================
 def test_create_organization_success(db_session):
     """
     Проверяет успешное создание новой организации.
@@ -43,9 +40,6 @@ def test_create_organization_success(db_session):
     assert saved_org.name == 'Тестовая организация'
 
 
-# ======================================================
-# 2️⃣ Тест: создание организации — ошибка валидации
-# ======================================================
 def test_create_organization_validation_error(db_session):
     """
     Проверяет, что создание организации без имени вызывает IntegrityError.
@@ -64,9 +58,6 @@ def test_create_organization_validation_error(db_session):
         db_session.commit()
 
 
-# ======================================================
-# 3️⃣ Тест: получение всех организаций
-# ======================================================
 def test_get_all_organizations(db_session):
     """
     Проверяет корректность получения списка всех организаций из базы.
