@@ -14,9 +14,6 @@ from sqlalchemy.exc import IntegrityError
 from app.models import User
 
 
-# ======================================================
-# 1️⃣ Тест: успешное создание пользователя
-# ======================================================
 def test_create_user_success(db_session):
     """
     Проверяет успешное создание пользователя в базе данных.
@@ -32,7 +29,7 @@ def test_create_user_success(db_session):
     user = User(
         telegram_id=12345,
         name='Иван Иванов',
-        organization_id=None,  # Пользователь без организации
+        organization_id=None,
     )
 
     db_session.add(user)
@@ -44,9 +41,6 @@ def test_create_user_success(db_session):
     assert saved_user.organization_id is None
 
 
-# ======================================================
-# 2️⃣ Тест: создание пользователя — ошибка валидации
-# ======================================================
 def test_create_user_validation_error(db_session):
     """
     Проверяет, что при создании пользователя без обязательного поля name
@@ -62,7 +56,7 @@ def test_create_user_validation_error(db_session):
     """
     user = User(
         telegram_id=54321,
-        name=None,  # обязательное поле
+        name=None,
         organization_id=None,
     )
 
@@ -71,9 +65,6 @@ def test_create_user_validation_error(db_session):
         db_session.commit()
 
 
-# ======================================================
-# 3️⃣ Тест: получение пользователя по ID
-# ======================================================
 def test_get_user_by_id(db_session):
     """
     Проверяет корректность получения пользователя по ID.
