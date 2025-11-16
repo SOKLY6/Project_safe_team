@@ -15,5 +15,13 @@ class User(Base):
     )
 
     organization = relationship('Organization', back_populates='users')
-    qr_codes = relationship('QRCode', back_populates='user')
-    access_logs = relationship('AccessLog', back_populates='user')
+    qr_codes = relationship(
+        'QRCode',
+        back_populates='user',
+        cascade='all, delete-orphan'
+    )
+    access_logs = relationship(
+        'AccessLog',
+        back_populates='user',
+        cascade='all, delete-orphan'
+    )
