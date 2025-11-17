@@ -1,7 +1,6 @@
 (function() {
   'use strict';
 
-  // API конфигурация
   const getApiBaseUrl = () => {
     const origin = window.location.origin;
     const hostname = window.location.hostname;
@@ -14,7 +13,6 @@
   const ITEMS_PER_PAGE = 50;
   const SCROLL_THRESHOLD = 200;
 
-  // Элементы DOM
   const loadingIndicator = document.getElementById('loading-indicator');
   const errorMessage = document.getElementById('error-message');
   const errorText = document.getElementById('error-text');
@@ -25,6 +23,8 @@
   const noData = document.getElementById('no-data');
   const refreshBtn = document.getElementById('refresh-btn');
   const exportBtn = document.getElementById('export-btn');
+  const staffNavLink = document.getElementById('staff-nav-link');
+  const actionsHeader = document.getElementById('actions-header');
   
   // Элементы фильтров
   const dateFromInput = document.getElementById('date-from');
@@ -36,7 +36,6 @@
   const activeFiltersCount = document.getElementById('active-filters-count');
   const filtersCountSpan = document.getElementById('filters-count');
 
-  // Состояние
   let allUsers = [];
   let filteredUsers = [];
   let organizations = [];
@@ -51,23 +50,25 @@
   };
 
 
-  // Инициализация
   document.addEventListener('DOMContentLoaded', function() {
+    // Проверка роли и показ элементов для админа
+    if (window.authUtils && window.authUtils.isAdmin()) {
+      if (staffNavLink) staffNavLink.style.display = 'block';
+      if (actionsHeader) actionsHeader.style.display = 'table-cell';
+    }
+    
     loadOrganizations();
     loadUsers();
     
-    // Обработчики событий
     refreshBtn.addEventListener('click', refreshUsers);
     exportBtn.addEventListener('click', exportToCSV);
     applyFiltersBtn.addEventListener('click', applyFilters);
     clearFiltersBtn.addEventListener('click', clearFilters);
     searchNameInput.addEventListener('input', debounce(applyFilters, 300));
     
-    // Бесконечный скролл
     window.addEventListener('scroll', handleScroll);
   });
 
-  // Обработка скролла для бесконечной загрузки
   function handleScroll() {
     if (isLoading || !hasMoreData) return;
 
@@ -80,14 +81,12 @@
     }
   }
 
-  // Загрузка всех пользователей из access_logs
   async function loadUsers() {
     showLoading();
     hideError();
     hideTable();
 
     try {
-      // Получаем все access logs из API
       const response = await fetch(`${API_BASE_URL}/access-logs/?limit=500`, {
         method: 'GET',
         headers: {
@@ -103,12 +102,10 @@
       }
 
       const accessLogs = await response.json();
-      
-      // Группируем логи по пользователям и вычисляем статистику
       const usersMap = new Map();
 
       accessLogs.forEach(log => {
-        if (!log.user_id || !log.user_name) return; // Пропускаем логи без пользователя
+        if (!log.user_id || !log.user_name) return; 
 
         const userId = log.user_id;
         
@@ -362,6 +359,15 @@
     const firstAccessFormatted = formatDate(user.firstAccess);
     const lastAccessFormatted = formatDate(user.lastAccess);
 
+    const isAdmin = window.authUtils && window.authUtils.isAdmin();
+    const actionsCell = isAdmin ? `
+      <td>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id}, '${escapeHtml(user.name)}')">
+          <i class="bi bi-trash"></i>
+        </button>
+      </td>
+    ` : '';
+
     row.innerHTML = `
       <td>
         <strong>${escapeHtml(user.name)}</strong>
@@ -382,6 +388,7 @@
       <td>
         <span class="badge bg-danger">${user.deniedCount}</span>
       </td>
+      ${actionsCell}
     `;
 
     return row;
@@ -533,6 +540,37 @@
       timeout = setTimeout(later, wait);
     };
   }
+
+  // Удаление конкретного пользователя (только для админа)
+  window.deleteUser = async function(userId, userName) {
+    if (!window.authUtils || !window.authUtils.isAdmin()) {
+      alert('Доступ запрещен');
+      return;
+    }
+
+    if (!confirm(`Вы уверены, что хотите удалить пользователя "${userName}"? Это действие нельзя отменить!`)) {
+      return;
+    }
+
+    try {
+      const headers = window.authUtils.getAuthHeaders();
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'DELETE',
+        headers: headers
+      });
+
+      if (response.ok || response.status === 204) {
+        alert('Пользователь успешно удален');
+        loadUsers(); // Перезагружаем пользователей
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert('Ошибка при удалении пользователя: ' + (data.detail || 'Неизвестная ошибка'));
+      }
+    } catch (error) {
+      console.error('Ошибка при удалении пользователя:', error);
+      alert('Ошибка сети при удалении пользователя');
+    }
+  };
 
 })();
 
