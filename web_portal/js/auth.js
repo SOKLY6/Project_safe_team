@@ -1,8 +1,18 @@
 (function() {
+  'use strict';
 
-  const USE_MOCK_AUTH = true;
-  const MOCK_LOGIN = 'test_login';
-  const MOCK_PASSWORD = 'test_password';
+  // API конфигурация
+  const getApiBaseUrl = () => {
+    const origin = window.location.origin;
+    const hostname = window.location.hostname;
+    const port = window.location.port === '8001' ? '8000' : (window.location.port || '8000');
+    const protocol = window.location.protocol;
+    
+    return `${protocol}//${hostname}:${port}`;
+  };
+  const API_BASE_URL = getApiBaseUrl();
+  const TOKEN_KEY = 'auth_token';
+
   const form = document.getElementById('login-form');
   const username = document.getElementById('username');
   const password = document.getElementById('password');
@@ -70,50 +80,70 @@
     formStatus.textContent = '';
     formStatus.className = 'form-status';
 
-    if (USE_MOCK_AUTH) {
-      const uVal = username.value.trim();
-      const pVal = password.value;
-      if (uVal !== MOCK_LOGIN) {
-        showError(username, usernameError, 'Неизвестный логин');
-        return;
-      }
-      if (pVal !== MOCK_PASSWORD) {
-        showError(password, passwordError, 'Неизвестный пароль');
-        return;
-      }
-      window.location.href = 'dashboard.html';
-      return;
-    }
+    // Показываем индикатор загрузки
+    formStatus.textContent = 'Выполняется вход...';
+    formStatus.className = 'form-status text-primary';
+
+    const loginUrl = `${API_BASE_URL}/auth/login`;
 
     try {
-      const response = await fetch(form.getAttribute('action') || '/login', {
+      const response = await fetch(loginUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.value.trim(), password: password.value })
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          username: username.value.trim(), 
+          password: password.value 
+        })
       });
 
       if (response.ok) {
-        window.location.href = 'dashboard.html';
-        return;
+        const data = await response.json();
+        
+        // Сохраняем токен в localStorage
+        if (data.access_token) {
+          localStorage.setItem(TOKEN_KEY, data.access_token);
+          
+          // Перенаправляем на главную страницу
+          window.location.href = 'dashboard.html';
+          return;
+        } else {
+          showError(password, passwordError, 'Ошибка: токен не получен');
+          formStatus.textContent = '';
+          return;
+        }
+      }
+
+      // Обработка ошибок
+      let errorData = {};
+      try { 
+        errorData = await response.json();
+      } catch (e) {
+        // Игнорируем ошибки парсинга
       }
 
       if (response.status === 401) {
-        let data = {};
-        try { data = await response.json(); } catch (_) {}
-        const code = (data && (data.code || data.error || data.detail)) || '';
-        if (String(code).toUpperCase().includes('WRONG_PASSWORD')) {
-          showError(password, passwordError, 'Неизвестный пароль');
+        const detail = errorData.detail || '';
+        if (detail.includes('Incorrect username or password') || detail.includes('Incorrect')) {
+          showError(password, passwordError, 'Неверный логин или пароль');
+          formStatus.textContent = '';
           return;
         }
-        if (String(code).toUpperCase().includes('INVALID_LOGIN')) {
-          showError(username, usernameError, 'Неизвестный логин');
-          return;
-        }
+        // Если другая 401 ошибка
+        showError(password, passwordError, detail || 'Неверный логин или пароль');
+        formStatus.textContent = '';
+        return;
       }
 
-      showError(password, passwordError, 'Ошибка сервера. Повторите позже');
+      // Другие ошибки
+      const errorMessage = errorData.detail || 'Ошибка сервера. Повторите позже';
+      showError(password, passwordError, errorMessage);
+      formStatus.textContent = '';
+      
     } catch (err) {
-      showError(password, passwordError, 'Ошибка сети. Проверьте подключение');
+      showError(password, passwordError, 'Ошибка сети. Проверьте подключение к серверу');
+      formStatus.textContent = '';
     }
   });
 })();
