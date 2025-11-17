@@ -29,6 +29,7 @@
   const noData = document.getElementById('no-data');
   const refreshBtn = document.getElementById('refresh-btn');
   const exportBtn = document.getElementById('export-btn');
+  const staffNavLink = document.getElementById('staff-nav-link');
   
   // Элементы фильтров
   const dateFromInput = document.getElementById('date-from');
@@ -59,6 +60,11 @@
 
   // Инициализация
   document.addEventListener('DOMContentLoaded', function() {
+    // Проверка роли и показ элементов для админа
+    if (window.authUtils && window.authUtils.isAdmin()) {
+      if (staffNavLink) staffNavLink.style.display = 'block';
+    }
+    
     loadOrganizations();
     loadEvents();
     
@@ -518,7 +524,6 @@
       timeout = setTimeout(later, wait);
     };
   }
-
 
 })();
 

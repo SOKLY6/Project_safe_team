@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Охранники</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-bg">
+  <nav class="navbar navbar-expand-lg bg-body-tertiary mb-3">
+    <div class="container">
+      <a class="navbar-brand" href="dashboard.html">Security</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Переключить навигацию">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" aria-current="page" href="dashboard.html">Панель</a></li>
+          <li class="nav-item"><a class="nav-link" href="scan_qr.html">Проверка QR</a></li>
+          <li class="nav-item"><a class="nav-link" href="visitors.html">Посетители</a></li>
+          <li class="nav-item"><a class="nav-link" href="statistics.html">Статистика</a></li>
+          <li class="nav-item"><a class="nav-link active" href="staff.html">Охранники</a></li>
+        </ul>
+        <div class="d-flex gap-2">
+          <a class="btn btn-primary" href="login.html">Выход</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body p-4 p-md-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="d-flex align-items-center gap-3">
+                <h1 class="h4 mb-0">
+                  <i class="bi bi-shield-check me-2"></i>Управление охранниками
+                </h1>
+              </div>
+              <div class="d-flex gap-2">
+                <button id="add-staff-btn" class="btn btn-primary btn-sm">
+                  <i class="bi bi-person-plus me-1"></i>Добавить охранника
+                </button>
+                <button id="refresh-btn" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-arrow-clockwise me-1"></i>Обновить
+                </button>
+              </div>
+            </div>
+
+            <!-- Индикатор загрузки -->
+            <div id="loading-indicator" class="text-center py-5" style="display: none;">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+              </div>
+              <p class="mt-2 text-muted small">Загрузка охранников...</p>
+            </div>
+
+            <!-- Сообщение об ошибке -->
+            <div id="error-message" class="alert alert-danger" style="display: none;" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              <span id="error-text"></span>
+            </div>
+
+            <!-- Таблица охранников -->
+            <div id="table-container" style="display: none;">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col" style="width: 200px;">ФИО (Логин)</th>
+                      <th scope="col" style="width: 150px;">Роль</th>
+                      <th scope="col" style="width: 200px;">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody id="staff-tbody">
+                    <!-- Охранники будут добавлены через JavaScript -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Сообщение об отсутствии данных -->
+              <div id="no-data" class="text-center text-muted py-5" style="display: none;">
+                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                <p class="mt-3 mb-0">Охранники не найдены</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Модальное окно для добавления охранника -->
+  <div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addStaffModalLabel">Добавить охранника</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          <form id="add-staff-form">
+            <div class="mb-3">
+              <label for="staff-username" class="form-label">Логин</label>
+              <input type="text" class="form-control" id="staff-username" required>
+            </div>
+            <div class="mb-3">
+              <label for="staff-password" class="form-label">Пароль</label>
+              <input type="password" class="form-control" id="staff-password" required>
+            </div>
+            <div class="alert alert-info small mb-0">
+              <i class="bi bi-info-circle me-1"></i>Новый охранник будет создан с ролью "Охранник" по умолчанию
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-primary" id="save-staff-btn">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="js/auth-utils.js"></script>
+  <script src="js/staff.js"></script>
+</body>
+</html>
+
