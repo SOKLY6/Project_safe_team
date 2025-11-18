@@ -1,16 +1,7 @@
 (function() {
   'use strict';
 
-  // API конфигурация
-  const getApiBaseUrl = () => {
-    const origin = window.location.origin;
-    const hostname = window.location.hostname;
-    const port = window.location.port === '8001' ? '8000' : (window.location.port || '8000');
-    const protocol = window.location.protocol;
-    
-    return `${protocol}//${hostname}:${port}`;
-  };
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = `http://${window.location.hostname}:8000`;
   const TOKEN_KEY = 'auth_token';
 
   const form = document.getElementById('login-form');
@@ -77,17 +68,11 @@
     e.preventDefault();
     clearError(username, usernameError);
     clearError(password, passwordError);
-    formStatus.textContent = '';
-    formStatus.className = 'form-status';
-
-    // Показываем индикатор загрузки
     formStatus.textContent = 'Выполняется вход...';
     formStatus.className = 'form-status text-primary';
 
-    const loginUrl = `${API_BASE_URL}/auth/login`;
-
     try {
-      const response = await fetch(loginUrl, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
@@ -101,11 +86,9 @@
       if (response.ok) {
         const data = await response.json();
         
-        // Сохраняем токен в localStorage
         if (data.access_token) {
           localStorage.setItem(TOKEN_KEY, data.access_token);
           
-          // Перенаправляем на главную страницу
           window.location.href = 'dashboard.html';
           return;
         } else {
@@ -115,30 +98,20 @@
         }
       }
 
-      // Обработка ошибок
       let errorData = {};
       try { 
         errorData = await response.json();
-      } catch (e) {
-        // Игнорируем ошибки парсинга
-      }
+      } catch (e) {}
 
       if (response.status === 401) {
         const detail = errorData.detail || '';
-        if (detail.includes('Incorrect username or password') || detail.includes('Incorrect')) {
-          showError(password, passwordError, 'Неверный логин или пароль');
-          formStatus.textContent = '';
-          return;
-        }
-        // Если другая 401 ошибка
-        showError(password, passwordError, detail || 'Неверный логин или пароль');
+        const message = detail.includes('Incorrect') ? 'Неверный логин или пароль' : (detail || 'Неверный логин или пароль');
+        showError(password, passwordError, message);
         formStatus.textContent = '';
         return;
       }
 
-      // Другие ошибки
-      const errorMessage = errorData.detail || 'Ошибка сервера. Повторите позже';
-      showError(password, passwordError, errorMessage);
+      showError(password, passwordError, errorData.detail || 'Ошибка сервера. Повторите позже');
       formStatus.textContent = '';
       
     } catch (err) {
@@ -147,5 +120,3 @@
     }
   });
 })();
-
-

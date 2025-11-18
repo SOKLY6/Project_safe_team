@@ -1,15 +1,7 @@
 (function() {
   'use strict';
 
-  const getApiBaseUrl = () => {
-    const origin = window.location.origin;
-    const hostname = window.location.hostname;
-    const port = window.location.port === '8001' ? '8000' : (window.location.port || '8000');
-    const protocol = window.location.protocol;
-    
-    return `${protocol}//${hostname}:${port}`;
-  };
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = `http://${window.location.hostname}:8000`;
   const ITEMS_PER_PAGE = 50;
   const SCROLL_THRESHOLD = 200;
 
@@ -26,7 +18,6 @@
   const staffNavLink = document.getElementById('staff-nav-link');
   const actionsHeader = document.getElementById('actions-header');
   
-  // Элементы фильтров
   const dateFromInput = document.getElementById('date-from');
   const dateToInput = document.getElementById('date-to');
   const organizationFilter = document.getElementById('organization-filter');
@@ -51,7 +42,6 @@
 
 
   document.addEventListener('DOMContentLoaded', function() {
-    // Проверка роли и показ элементов для админа
     if (window.authUtils && window.authUtils.isAdmin()) {
       if (staffNavLink) staffNavLink.style.display = 'block';
       if (actionsHeader) actionsHeader.style.display = 'table-cell';
@@ -60,7 +50,7 @@
     loadOrganizations();
     loadUsers();
     
-    refreshBtn.addEventListener('click', refreshUsers);
+    refreshBtn.addEventListener('click', loadUsers);
     exportBtn.addEventListener('click', exportToCSV);
     applyFiltersBtn.addEventListener('click', applyFilters);
     clearFiltersBtn.addEventListener('click', clearFilters);
@@ -126,17 +116,14 @@
         const user = usersMap.get(userId);
         const logDate = new Date(log.timestamp);
 
-        // Обновляем первый вход (самое раннее время)
         if (logDate < user.firstAccess) {
           user.firstAccess = logDate;
         }
 
-        // Обновляем последний вход (самое позднее время)
         if (logDate > user.lastAccess) {
           user.lastAccess = logDate;
         }
 
-        // Подсчитываем визиты
         user.totalVisits++;
         if (log.access_granted) {
           user.grantedCount++;
@@ -145,15 +132,12 @@
         }
       });
 
-      // Преобразуем Map в массив
       allUsers = Array.from(usersMap.values());
 
-      // Сортируем по последнему входу (новые сверху)
-      allUsers = allUsers.sort((a, b) => {
+      allUsers.sort((a, b) => {
         return b.lastAccess.getTime() - a.lastAccess.getTime();
       });
 
-      // Применяем текущие фильтры
       applyFilters();
       
       hideLoading();
@@ -166,7 +150,6 @@
     }
   }
 
-  // Загрузка организаций для фильтра
   async function loadOrganizations() {
     try {
       const orgsResponse = await fetch(`${API_BASE_URL}/organizations/`);
@@ -177,7 +160,6 @@
       
       organizations = await orgsResponse.json();
       
-      // Заполняем селект организаций
       organizationFilter.innerHTML = '<option value="all">Все</option>';
       organizations.forEach(org => {
         const option = document.createElement('option');
@@ -190,7 +172,6 @@
     }
   }
 
-  // Загрузка дополнительных пользователей (для бесконечного скролла)
   async function loadMoreUsers() {
     if (isLoading || !hasMoreData) return;
 
@@ -207,7 +188,6 @@
     isLoading = true;
     showLoadingMore();
 
-    // Имитация задержки для плавности
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const pageUsers = filteredUsers.slice(startIndex, endIndex);
@@ -224,17 +204,13 @@
     }
   }
 
-  // Применение фильтров
   function applyFilters() {
-    // Получаем значения фильтров
     currentFilters.dateFrom = dateFromInput.value || null;
     currentFilters.dateTo = dateToInput.value || null;
     currentFilters.organization = organizationFilter.value;
     currentFilters.searchName = searchNameInput.value.trim().toLowerCase();
 
-    // Фильтруем пользователей
     filteredUsers = allUsers.filter(user => {
-      // Фильтр по дате от (проверяем последний вход)
       if (currentFilters.dateFrom) {
         const lastAccessDate = user.lastAccess.toISOString().split('T')[0];
         if (lastAccessDate < currentFilters.dateFrom) {
@@ -242,7 +218,6 @@
         }
       }
 
-      // Фильтр по дате до (проверяем последний вход)
       if (currentFilters.dateTo) {
         const lastAccessDate = user.lastAccess.toISOString().split('T')[0];
         if (lastAccessDate > currentFilters.dateTo) {
@@ -250,7 +225,6 @@
         }
       }
 
-      // Фильтр по организации
       if (currentFilters.organization !== 'all') {
         const orgId = parseInt(currentFilters.organization);
         if (user.organization_id !== orgId) {
@@ -258,7 +232,6 @@
         }
       }
 
-      // Поиск по ФИО
       if (currentFilters.searchName) {
         const userName = (user.name || '').toLowerCase();
         if (!userName.includes(currentFilters.searchName)) {
@@ -269,21 +242,17 @@
       return true;
     });
 
-    // Сортируем отфильтрованных пользователей по последнему входу (новые сверху)
-    filteredUsers = filteredUsers.sort((a, b) => {
+    filteredUsers.sort((a, b) => {
       return b.lastAccess.getTime() - a.lastAccess.getTime();
     });
 
-    // Обновляем счетчик активных фильтров
     updateFiltersCount();
 
-    // Перерисовываем таблицу
     currentPage = 0;
     hasMoreData = filteredUsers.length > 0;
     renderUsers();
   }
 
-  // Очистка фильтров
   function clearFilters() {
     dateFromInput.value = '';
     dateToInput.value = '';
@@ -300,7 +269,6 @@
     applyFilters();
   }
 
-  // Обновление счетчика активных фильтров
   function updateFiltersCount() {
     let count = 0;
     if (currentFilters.dateFrom) count++;
@@ -312,7 +280,6 @@
     activeFiltersCount.style.display = count > 0 ? 'block' : 'none';
   }
 
-  // Отображение всех пользователей (первая страница)
   function renderUsers() {
     usersTbody.innerHTML = '';
     noData.style.display = filteredUsers.length === 0 ? 'block' : 'none';
@@ -333,7 +300,6 @@
     }
   }
 
-  // Отображение страницы пользователей
   function renderUsersPage(users) {
     users.forEach(user => {
       const row = createUserRow(user);
@@ -341,11 +307,9 @@
     });
   }
 
-  // Создание строки таблицы для пользователя
   function createUserRow(user) {
     const row = document.createElement('tr');
     
-    // Форматирование дат
     const formatDate = (date) => {
       return date.toLocaleString('ru-RU', {
         day: '2-digit',
@@ -394,12 +358,6 @@
     return row;
   }
 
-  // Обновление пользователей
-  function refreshUsers() {
-    loadUsers();
-  }
-
-  // Вспомогательные функции для управления UI
   function showLoading() {
     loadingIndicator.style.display = 'block';
   }
@@ -409,19 +367,15 @@
   }
 
   function showLoadingMore() {
-    loadingMore.style.display = 'block';
+    if (loadingMore) loadingMore.style.display = 'block';
   }
 
   function hideLoadingMore() {
-    loadingMore.style.display = 'none';
+    if (loadingMore) loadingMore.style.display = 'none';
   }
 
   function showNoMoreData() {
-    noMoreData.style.display = 'block';
-  }
-
-  function hideNoMoreData() {
-    noMoreData.style.display = 'none';
+    if (noMoreData) noMoreData.style.display = 'block';
   }
 
   function showError(message) {
@@ -447,36 +401,30 @@
     return div.innerHTML;
   }
 
-  // Экспорт в CSV
   function exportToCSV() {
     if (filteredUsers.length === 0) {
       alert('Нет данных для экспорта');
       return;
     }
 
-    // Подтверждение экспорта с количеством записей
     const count = filteredUsers.length;
     const countText = count === 1 ? 'запись' : count < 5 ? 'записи' : 'записей';
     if (!confirm(`Экспортировать ${count} ${countText} в CSV?\n\nЭкспортируются только отфильтрованные данные.`)) {
       return;
     }
 
-    // Заголовки CSV
     const headers = ['ФИО', 'Организация', 'Первый вход', 'Последний вход', 'Всего визитов', 'Разрешено', 'Запрещено'];
     const rows = [headers.join(',')];
 
-    // Функция для экранирования CSV значений
     const escapeCSV = (text) => {
       if (text === null || text === undefined) return '';
       const str = String(text);
-      // Если содержит кавычки, запятые или переносы строк - экранируем
       if (str.includes('"') || str.includes(',') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
       return `"${str}"`;
     };
 
-    // Форматирование даты для CSV
     const formatDateCSV = (date) => {
       return date.toLocaleString('ru-RU', {
         day: '2-digit',
@@ -487,7 +435,6 @@
       });
     };
 
-    // Данные (используем filteredUsers - только отфильтрованные данные)
     filteredUsers.forEach(user => {
       const row = [
         escapeCSV(user.name || 'Неизвестно'),
@@ -501,18 +448,14 @@
       rows.push(row.join(','));
     });
 
-    // Создаем CSV содержимое
     const csvContent = rows.join('\n');
-    
-    // Создаем BOM для правильной кодировки в Excel
+
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-    // Создаем ссылку для скачивания
+
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
-    // Формируем имя файла с датой
+
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const filename = `users_${dateStr}.csv`;
@@ -523,25 +466,18 @@
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
-    // Освобождаем память
+
     URL.revokeObjectURL(url);
   }
 
-  // Функция debounce для задержки выполнения
   function debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
+    return function(...args) {
       clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
+      timeout = setTimeout(() => func(...args), wait);
     };
   }
 
-  // Удаление конкретного пользователя (только для админа)
   window.deleteUser = async function(userId, userName) {
     if (!window.authUtils || !window.authUtils.isAdmin()) {
       alert('Доступ запрещен');
@@ -561,7 +497,7 @@
 
       if (response.ok || response.status === 204) {
         alert('Пользователь успешно удален');
-        loadUsers(); // Перезагружаем пользователей
+        loadUsers();
       } else {
         const data = await response.json().catch(() => ({}));
         alert('Ошибка при удалении пользователя: ' + (data.detail || 'Неизвестная ошибка'));
@@ -573,4 +509,3 @@
   };
 
 })();
-

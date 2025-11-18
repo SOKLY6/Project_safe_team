@@ -13,10 +13,7 @@
   const resultErrorMessage = document.getElementById('result-error-message');
   const qrError = document.getElementById('qr-error');
 
-  // Используем относительный URL для API (сервер должен проксировать запросы)
-  // Если API на другом порту, можно использовать полный URL
-  const API_BASE_URL = window.location.origin.replace(':8001', ':8000') || 'http://localhost:8000';
-  const USE_MOCK_API = false; // Переключаем на реальный API
+  const API_BASE_URL = `http://${window.location.hostname}:8000`;
 
 
   const HISTORY_KEY = 'qr_scan_history';
@@ -62,36 +59,20 @@
     clearBtn.disabled = true;
     qrInput.disabled = true;
     
-    // Убеждаемся, что элемент виден
     loadingIndicator.style.display = 'block';
     loadingIndicator.style.visibility = 'visible';
     loadingIndicator.style.opacity = '0';
     loadingIndicator.classList.remove('qr-loading-show');
     
-    // Принудительный рефлоу
     void loadingIndicator.offsetHeight;
     
-    // Показываем с анимацией
     setTimeout(() => {
       loadingIndicator.classList.add('qr-loading-show');
-      
-      // Проверка в консоли для отладки
-      const computed = window.getComputedStyle(loadingIndicator);
-      const spinner = loadingIndicator.querySelector('.spinner-border');
-      console.log('Loading indicator shown:', {
-        display: computed.display,
-        opacity: computed.opacity,
-        visibility: computed.visibility,
-        hasClass: loadingIndicator.classList.contains('qr-loading-show'),
-        spinnerExists: !!spinner,
-        spinnerDisplay: spinner ? window.getComputedStyle(spinner).display : 'no spinner'
-      });
     }, 10);
   }
 
   function hideLoading() {
     loadingIndicator.classList.remove('qr-loading-show');
-    // Скрываем сразу после завершения анимации
     setTimeout(() => {
       loadingIndicator.style.display = 'none';
       loadingIndicator.style.opacity = '';
@@ -109,43 +90,35 @@
     if (success) {
       resultSuccessMessage.textContent = message;
       
-      // Добавляем детальную информацию о пользователе
       if (data) {
         let detailsHtml = '<div class="qr-result-details mt-3 pt-3" style="border-top: 1px solid rgba(16, 185, 129, 0.2);">';
         
-        // ФИО (name)
         if (data.name) {
           detailsHtml += `<div class="small mb-2"><strong>ФИО:</strong> ${escapeHtml(data.name)}</div>`;
         }
         
-        // ID пользователя
         if (data.user_id) {
           detailsHtml += `<div class="small mb-2"><strong>ID:</strong> ${escapeHtml(String(data.user_id))}</div>`;
         }
         
-        // Организация
         if (data.organization) {
           detailsHtml += `<div class="small mb-2"><strong>Организация:</strong> ${escapeHtml(data.organization)}</div>`;
         }
         
-        // Должность
         if (data.role) {
           detailsHtml += `<div class="small mb-2"><strong>Должность:</strong> ${escapeHtml(data.role)}</div>`;
         }
         
-        // Telegram ID (если есть)
         if (data.telegram_id) {
           detailsHtml += `<div class="small mb-2"><strong>Telegram ID:</strong> ${escapeHtml(String(data.telegram_id))}</div>`;
         }
         
-        // Статус доступа
         if (data.access_granted !== undefined) {
           const accessStatus = data.access_granted ? 'Разрешён' : 'Запрещён';
           const accessClass = data.access_granted ? 'text-success' : 'text-danger';
           detailsHtml += `<div class="small mb-2"><strong>Статус доступа:</strong> <span class="${accessClass}">${accessStatus}</span></div>`;
         }
         
-        // Время проверки
         if (data.timestamp) {
           const date = new Date(data.timestamp);
           const formattedTime = date.toLocaleString('ru-RU', {
@@ -175,13 +148,11 @@
   function validateQRCode() {
     const qrValue = qrInput.value.trim();
     
-    // Проверка на пустой QR-код
     if (!qrValue) {
       showError('Введите QR-код для проверки');
       return false;
     }
 
-    // Проверка минимальной длины QR-кода
     if (qrValue.length < 5) {
       showError('QR-код слишком короткий (минимум 5 символов)');
       return false;
@@ -191,74 +162,36 @@
     return true;
   }
 
-  // Функция нормализации QR-кода (убирает лишние пробелы, нормализует формат)
   function normalizeQRCode(qrCode) {
-    return qrCode.trim().replace(/\s+/g, ' '); // Убираем лишние пробелы и переносы
+    return qrCode.trim().replace(/\s+/g, ' ');
   }
 
-  // Функция извлечения токена из QR-кода (теперь просто возвращает сам QR-код)
   function extractToken(qrCode) {
     return qrCode.trim();
   }
 
   async function checkQRCode(qrCode) {
-    // Нормализуем QR-код перед отправкой
     const normalizedQR = normalizeQRCode(qrCode);
-    
-    if (USE_MOCK_API) {
-      // Имитация задержки API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Мок-проверка QR-кода (для тестирования без сервера)
-      const token = extractToken(normalizedQR);
-      if (token && token.length >= 5) {
-        return {
-          success: true,
-          message: 'QR-код действителен.',
-          data: {
-            user_id: 1,
-            name: 'Тестовый Пользователь',
-            organization: 'Тестовая организация',
-            role: 'Тестер',
-            telegram_id: 123456,
-            access_granted: true,
-            timestamp: new Date().toISOString(),
-            user: 'Тестовый Пользователь' // Для совместимости с историей
-          }
-        };
-      } else {
-        return {
-          success: false,
-          message: 'QR-код недействителен или не найден в системе.'
-        };
-      }
-    }
 
     try {
-      // Используем весь QR-код как токен (без префикса)
       const token = extractToken(normalizedQR);
 
-      // Используем API эндпоинт POST /qr/verify
       const response = await fetch(`${API_BASE_URL}/qr/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          qr_data: token, // Отправляем QR-код как токен
-          scanner_id: 'web_portal' // ID сканера для веб-портала
+          qr_data: token,
+          scanner_id: 'web_portal'
         })
       });
 
       const data = await response.json();
 
-      // Обработка ответа от сервера
-      // API возвращает {status: 'granted', user_info: {...}} или {status: 'denied'|'invalid'|'expired', message: ...}
       if (response.ok && data.status === 'granted' && data.user_info) {
-        // Успешная проверка - пользователь найден и доступ разрешён
         const userInfo = data.user_info;
         
-        // Получаем информацию об организации для отображения
         let organizationName = 'Не указана';
         if (userInfo.organization_id) {
           try {
@@ -275,23 +208,18 @@
           }
         }
 
-        // Переводим сообщение на русский, если оно на английском
         let message = data.message || '';
         
-        // Если сообщение пустое или содержит только "Access granted", устанавливаем стандартное сообщение
         if (!message || message.toLowerCase().trim() === 'access granted') {
           message = 'QR-код действителен. Доступ разрешён.';
         } else {
-          // Заменяем "Access granted" на пустую строку, если оно есть в начале или конце
           message = message.replace(/^\s*access\s+granted\s*[.,]?\s*/gi, '');
           message = message.replace(/\s*[.,]?\s*access\s+granted\s*$/gi, '');
           message = message.trim();
           
-          // Если после удаления "Access granted" сообщение пустое, используем стандартное
           if (!message) {
             message = 'QR-код действителен. Доступ разрешён.';
           } else {
-            // Если сообщение не пустое, добавляем стандартное в начало
             message = 'QR-код действителен. Доступ разрешён. ' + message;
           }
         }
@@ -304,16 +232,14 @@
             name: userInfo.name,
             organization: organizationName,
             organization_id: userInfo.organization_id,
-            role: 'Пользователь', // API не возвращает роль
+            role: 'Пользователь',
             telegram_id: userInfo.telegram_id,
             access_granted: true,
             timestamp: new Date().toISOString(),
-            user: userInfo.name // Для совместимости с историей
+            user: userInfo.name
           }
         };
       } else {
-        // Ошибка проверки - доступ запрещён
-        // Переводим message из API на русский язык
         let errorMessage = 'QR-код недействителен или доступ запрещён.';
         if (data.message) {
           const message = data.message.toLowerCase();
@@ -330,7 +256,6 @@
           } else if (message.includes('rate limit')) {
             errorMessage = 'Превышен лимит запросов. Попробуйте позже.';
           } else {
-            // Используем message как есть, если это уже русский текст
             errorMessage = data.message;
           }
         }
@@ -348,7 +273,6 @@
     }
   }
 
-  // Обработка отправки формы
   form.addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -360,28 +284,22 @@
     showLoading();
     clearError();
 
-    // Минимальная задержка для демонстрации индикатора загрузки (500ms)
-    // Это гарантирует, что пользователь увидит анимацию загрузки
     const [result] = await Promise.all([
       checkQRCode(qrCode),
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
     
-    // Используем сообщение напрямую (оно уже обработано в checkQRCode)
     let displayMessage = result.message || 'QR-код действителен. Доступ разрешён.';
     
-    // Убираем возможные дублирования "Доступ разрешён"
     displayMessage = displayMessage.replace(/(Доступ разрешён\.?\s*){2,}/gi, 'Доступ разрешён.');
     displayMessage = displayMessage.trim();
     
     showResult(result.success, displayMessage, result.data);
     
-    // Сохраняем в историю (используем переведенное сообщение без дублирования)
-    const user = result.data?.user; // Безопасное получение user
+    const user = result.data?.user;
     saveToHistory(qrCode, result.success, displayMessage, result.data, user);
   });
 
-  // Обработка кнопки очистки
   clearBtn.addEventListener('click', function() {
     clearForm();
   });
@@ -393,12 +311,10 @@
     qrInput.focus();
   }
 
-  // Автофокус на поле ввода при загрузке страницы
   window.addEventListener('load', function() {
     qrInput.focus();
   });
 
-  // Очистка ошибок при вводе
   qrInput.addEventListener('input', function() {
     if (qrInput.classList.contains('is-invalid')) {
       clearError();
@@ -406,7 +322,6 @@
     hideResults();
   });
 
-  // Обработка вставки через Ctrl+V / Cmd+V
   qrInput.addEventListener('paste', function(e) {
     setTimeout(() => {
       const pastedText = qrInput.value.trim();
@@ -416,7 +331,6 @@
     }, 10);
   });
 
-  // ===== Функционал истории =====
 
   function getHistory() {
     try {
@@ -439,10 +353,8 @@
   function saveToHistory(qrCode, success, message, data, user) {
     const history = getHistory();
     
-    // Удаляем дубликаты (если тот же QR-код уже есть)
     const filteredHistory = history.filter(item => item.qrCode !== qrCode);
     
-    // Добавляем новый элемент в начало
     const newItem = {
       qrCode: qrCode,
       success: success,
@@ -454,12 +366,10 @@
     
     filteredHistory.unshift(newItem);
     
-    // Ограничиваем количество до MAX_HISTORY_ITEMS
     const limitedHistory = filteredHistory.slice(0, MAX_HISTORY_ITEMS);
     
     saveHistory(limitedHistory);
     
-    // Обновляем отображение, если история открыта
     if (isHistoryExpanded) {
       renderHistory();
     }
@@ -523,7 +433,6 @@
       return;
     }
     
-    // Показываем кнопку очистки, если есть история
     if (isHistoryExpanded) {
       clearAllHistoryBtn.style.display = 'block';
     }
@@ -550,11 +459,8 @@
       
       const escapedQrCode = escapeHtml(item.qrCode);
       
-      // Переводим сообщение на русский, если оно содержит английский текст
       let displayMessage = item.message || '';
-      // Полностью заменяем "Access granted" на русский текст
       displayMessage = displayMessage.replace(/access\s+granted/gi, 'QR-код действителен. Доступ разрешён.');
-      // Убираем возможные дублирования
       displayMessage = displayMessage.replace(/QR-код действителен\. Доступ разрешён\.\s*QR-код действителен\. Доступ разрешён\./gi, 'QR-код действителен. Доступ разрешён.');
       displayMessage = displayMessage.trim();
       if (!displayMessage) {
@@ -599,9 +505,7 @@
         </div>
       `;
       
-      // Обработчик клика на элементе (только если клик не на кнопках)
       listItem.addEventListener('click', function(e) {
-        // Проверяем, что клик не на кнопках и не на их иконках
         const target = e.target;
         const isButton = target.closest('.qr-history-use-btn') || 
                         target.closest('.qr-history-delete-btn') ||
@@ -613,7 +517,6 @@
         }
       });
       
-      // Обработчик кнопки "Использовать"
       const useBtn = listItem.querySelector('.qr-history-use-btn');
       if (useBtn) {
         useBtn.addEventListener('click', function(e) {
@@ -624,7 +527,6 @@
         });
       }
       
-      // Обработчик кнопки "Удалить"
       const deleteBtn = listItem.querySelector('.qr-history-delete-btn');
       deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -640,7 +542,6 @@
     clearError();
     hideResults();
     
-    // Плавная прокрутка к полю ввода (используем setTimeout для корректной работы)
     setTimeout(() => {
       qrInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
       qrInput.focus();
@@ -657,7 +558,6 @@
     saveHistory(filteredHistory);
     renderHistory();
     
-    // Скрываем кнопку очистки, если история пуста
     if (filteredHistory.length === 0) {
       clearAllHistoryBtn.style.display = 'none';
     }
@@ -687,7 +587,6 @@
       historyChevron.classList.remove('bi-chevron-down');
       historyChevron.classList.add('bi-chevron-up');
       
-      // Показываем кнопку очистки, если есть история
       const history = getHistory();
       clearAllHistoryBtn.style.display = history.length > 0 ? 'block' : 'none';
       
@@ -701,7 +600,6 @@
     }
   }
 
-  // Обработчики событий
   toggleHistoryBtn.addEventListener('click', toggleHistory);
   
   clearAllHistoryBtn.addEventListener('click', function(e) {
@@ -726,8 +624,4 @@
     renderHistory();
   });
 
-  // Инициализация истории при загрузке
-  if (getHistory().length > 0) {
-    // Если есть история, автоматически не раскрываем, но показываем индикатор
-  }
 })();

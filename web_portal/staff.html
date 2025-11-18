@@ -51,7 +51,7 @@
               </div>
             </div>
 
-            <!-- Индикатор загрузки -->
+
             <div id="loading-indicator" class="text-center py-5" style="display: none;">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Загрузка...</span>
@@ -59,13 +59,13 @@
               <p class="mt-2 text-muted small">Загрузка охранников...</p>
             </div>
 
-            <!-- Сообщение об ошибке -->
+
             <div id="error-message" class="alert alert-danger" style="display: none;" role="alert">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               <span id="error-text"></span>
             </div>
 
-            <!-- Таблица охранников -->
+
             <div id="table-container" style="display: none;">
               <div class="table-responsive">
                 <table class="table table-hover align-middle">
@@ -77,12 +77,9 @@
                     </tr>
                   </thead>
                   <tbody id="staff-tbody">
-                    <!-- Охранники будут добавлены через JavaScript -->
                   </tbody>
                 </table>
               </div>
-
-              <!-- Сообщение об отсутствии данных -->
               <div id="no-data" class="text-center text-muted py-5" style="display: none;">
                 <i class="bi bi-inbox" style="font-size: 3rem;"></i>
                 <p class="mt-3 mb-0">Охранники не найдены</p>
@@ -94,7 +91,6 @@
     </div>
   </main>
 
-  <!-- Модальное окно для добавления охранника -->
   <div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -130,4 +126,3 @@
   <script src="js/staff.js"></script>
 </body>
 </html>
-
