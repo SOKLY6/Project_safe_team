@@ -1,24 +1,10 @@
 (function() {
   'use strict';
 
-  // API конфигурация
-  // Используем hostname из текущего URL, чтобы работать на других устройствах
-  // Если сайт открыт по IP (например, http://192.168.1.100:8001), то API будет на том же IP
-  const getApiBaseUrl = () => {
-    const origin = window.location.origin;
-    const hostname = window.location.hostname;
-    const port = window.location.port === '8001' ? '8000' : (window.location.port || '8000');
-    const protocol = window.location.protocol;
-    
-    // Если hostname - localhost, оставляем как есть (для локальной разработки)
-    // Если hostname - IP-адрес, используем его (для работы на других устройствах)
-    return `${protocol}//${hostname}:${port}`;
-  };
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = `http://${window.location.hostname}:8000`;
   const ITEMS_PER_PAGE = 50;
-  const SCROLL_THRESHOLD = 200; // Загружать следующую страницу за 200px до конца
+  const SCROLL_THRESHOLD = 200;
 
-  // Элементы DOM
   const loadingIndicator = document.getElementById('loading-indicator');
   const errorMessage = document.getElementById('error-message');
   const errorText = document.getElementById('error-text');
@@ -31,7 +17,6 @@
   const exportBtn = document.getElementById('export-btn');
   const staffNavLink = document.getElementById('staff-nav-link');
   
-  // Элементы фильтров
   const dateFromInput = document.getElementById('date-from');
   const dateToInput = document.getElementById('date-to');
   const statusFilter = document.getElementById('status-filter');
@@ -42,7 +27,6 @@
   const activeFiltersCount = document.getElementById('active-filters-count');
   const filtersCountSpan = document.getElementById('filters-count');
 
-  // Состояние
   let allEvents = [];
   let filteredEvents = [];
   let organizations = [];
@@ -58,9 +42,7 @@
   };
 
 
-  // Инициализация
   document.addEventListener('DOMContentLoaded', function() {
-    // Проверка роли и показ элементов для админа
     if (window.authUtils && window.authUtils.isAdmin()) {
       if (staffNavLink) staffNavLink.style.display = 'block';
     }
@@ -68,18 +50,15 @@
     loadOrganizations();
     loadEvents();
     
-    // Обработчики событий
-    refreshBtn.addEventListener('click', refreshEvents);
+    refreshBtn.addEventListener('click', loadEvents);
     exportBtn.addEventListener('click', exportToCSV);
     applyFiltersBtn.addEventListener('click', applyFilters);
     clearFiltersBtn.addEventListener('click', clearFilters);
     searchNameInput.addEventListener('input', debounce(applyFilters, 300));
     
-    // Бесконечный скролл
     window.addEventListener('scroll', handleScroll);
   });
 
-  // Обработка скролла для бесконечной загрузки
   function handleScroll() {
     if (isLoading || !hasMoreData) return;
 
@@ -92,15 +71,12 @@
     }
   }
 
-  // Загрузка всех событий
   async function loadEvents() {
     showLoading();
     hideError();
     hideTable();
 
     try {
-      // Получаем все access logs из API
-      // Загружаем больше данных (лимит 500 - максимум)
       const response = await fetch(`${API_BASE_URL}/access-logs/?limit=500`, {
         method: 'GET',
         headers: {
@@ -109,7 +85,6 @@
       });
 
       if (!response.ok) {
-        // Если API недоступен, показываем ошибку
         console.error('Ошибка загрузки событий:', response.status, response.statusText);
         showError(`Ошибка загрузки данных: ${response.status} ${response.statusText}`);
         hideLoading();
@@ -118,23 +93,19 @@
 
       const data = await response.json();
       
-      // API уже возвращает данные с user_name и organization_name
-      // Добавляем scanner_name для совместимости
-      allEvents = data.map(event => ({
-        ...event,
-        scanner_name: event.scanner_id || 'Не указана',
-        user_name: event.user_name || 'Неизвестно',
-        organization_name: event.organization_name || 'Не указана'
-      }));
+      allEvents = data.map(event => {
+        return {
+          ...event,
+          scanner_name: event.scanner_id || 'Не указана',
+          user_name: event.user_name || 'Неизвестно',
+          organization_name: event.organization_name || 'Не указана'
+        };
+      });
       
-      // Сортируем по времени (новые сверху)
-      allEvents = allEvents.sort((a, b) => {
-        const timeA = new Date(a.timestamp).getTime();
-        const timeB = new Date(b.timestamp).getTime();
-        return timeB - timeA; // Новые сверху
+      allEvents.sort((a, b) => {
+        return new Date(b.timestamp) - new Date(a.timestamp);
       });
 
-      // Применяем текущие фильтры
       applyFilters();
       
       hideLoading();
@@ -148,7 +119,6 @@
   }
 
 
-  // Загрузка организаций для фильтра
   async function loadOrganizations() {
     try {
       const orgsResponse = await fetch(`${API_BASE_URL}/organizations/`);
@@ -159,7 +129,6 @@
       
       organizations = await orgsResponse.json();
       
-      // Заполняем селект организаций
       organizationFilter.innerHTML = '<option value="all">Все</option>';
       organizations.forEach(org => {
         const option = document.createElement('option');
@@ -173,7 +142,6 @@
   }
 
 
-  // Загрузка дополнительных событий (для бесконечного скролла)
   async function loadMoreEvents() {
     if (isLoading || !hasMoreData) return;
 
@@ -190,7 +158,6 @@
     isLoading = true;
     showLoadingMore();
 
-    // Имитация задержки для плавности
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const pageEvents = filteredEvents.slice(startIndex, endIndex);
@@ -207,18 +174,14 @@
     }
   }
 
-  // Применение фильтров
   function applyFilters() {
-    // Получаем значения фильтров
     currentFilters.dateFrom = dateFromInput.value || null;
     currentFilters.dateTo = dateToInput.value || null;
     currentFilters.status = statusFilter.value;
     currentFilters.organization = organizationFilter.value;
     currentFilters.searchName = searchNameInput.value.trim().toLowerCase();
 
-    // Фильтруем события
     filteredEvents = allEvents.filter(event => {
-      // Фильтр по дате от
       if (currentFilters.dateFrom) {
         const eventDate = new Date(event.timestamp).toISOString().split('T')[0];
         if (eventDate < currentFilters.dateFrom) {
@@ -226,7 +189,6 @@
         }
       }
 
-      // Фильтр по дате до
       if (currentFilters.dateTo) {
         const eventDate = new Date(event.timestamp).toISOString().split('T')[0];
         if (eventDate > currentFilters.dateTo) {
@@ -234,7 +196,6 @@
         }
       }
 
-      // Фильтр по статусу
       if (currentFilters.status !== 'all') {
         const isGranted = currentFilters.status === 'granted';
         if (event.access_granted !== isGranted) {
@@ -242,7 +203,6 @@
         }
       }
 
-      // Фильтр по организации
       if (currentFilters.organization !== 'all') {
         const orgId = parseInt(currentFilters.organization);
         if (event.organization_id !== orgId) {
@@ -250,7 +210,6 @@
         }
       }
 
-      // Поиск по ФИО
       if (currentFilters.searchName) {
         const userName = (event.user_name || '').toLowerCase();
         if (!userName.includes(currentFilters.searchName)) {
@@ -261,23 +220,17 @@
       return true;
     });
 
-    // Сортируем отфильтрованные события по времени (новые сверху)
-    filteredEvents = filteredEvents.sort((a, b) => {
-      const timeA = new Date(a.timestamp).getTime();
-      const timeB = new Date(b.timestamp).getTime();
-      return timeB - timeA; // Новые сверху
+    filteredEvents.sort((a, b) => {
+      return new Date(b.timestamp) - new Date(a.timestamp);
     });
 
-    // Обновляем счетчик активных фильтров
     updateFiltersCount();
 
-    // Перерисовываем таблицу
     currentPage = 0;
     hasMoreData = filteredEvents.length > 0;
     renderEvents();
   }
 
-  // Очистка фильтров
   function clearFilters() {
     dateFromInput.value = '';
     dateToInput.value = '';
@@ -296,7 +249,6 @@
     applyFilters();
   }
 
-  // Обновление счетчика активных фильтров
   function updateFiltersCount() {
     let count = 0;
     if (currentFilters.dateFrom) count++;
@@ -309,7 +261,6 @@
     activeFiltersCount.style.display = count > 0 ? 'block' : 'none';
   }
 
-  // Отображение всех событий (первая страница)
   function renderEvents() {
     eventsTbody.innerHTML = '';
     noData.style.display = filteredEvents.length === 0 ? 'block' : 'none';
@@ -330,7 +281,6 @@
     }
   }
 
-  // Отображение страницы событий
   function renderEventsPage(events) {
     events.forEach(event => {
       const row = createEventRow(event);
@@ -338,11 +288,9 @@
     });
   }
 
-  // Создание строки таблицы для события
   function createEventRow(event) {
     const row = document.createElement('tr');
     
-    // Форматирование времени
     const date = new Date(event.timestamp);
     const formattedTime = date.toLocaleString('ru-RU', {
       day: '2-digit',
@@ -353,7 +301,6 @@
       second: '2-digit'
     });
 
-    // Статус доступа
     const statusClass = event.access_granted ? 'success' : 'danger';
     const statusIcon = event.access_granted ? 'check-circle-fill' : 'x-circle-fill';
     const statusText = event.access_granted ? 'Разрешён' : 'Запрещён';
@@ -379,12 +326,6 @@
     return row;
   }
 
-  // Обновление событий
-  function refreshEvents() {
-    loadEvents();
-  }
-
-  // Вспомогательные функции для управления UI
   function showLoading() {
     loadingIndicator.style.display = 'block';
   }
@@ -394,19 +335,15 @@
   }
 
   function showLoadingMore() {
-    loadingMore.style.display = 'block';
+    if (loadingMore) loadingMore.style.display = 'block';
   }
 
   function hideLoadingMore() {
-    loadingMore.style.display = 'none';
+    if (loadingMore) loadingMore.style.display = 'none';
   }
 
   function showNoMoreData() {
-    noMoreData.style.display = 'block';
-  }
-
-  function hideNoMoreData() {
-    noMoreData.style.display = 'none';
+    if (noMoreData) noMoreData.style.display = 'block';
   }
 
   function showError(message) {
@@ -432,36 +369,30 @@
     return div.innerHTML;
   }
 
-  // Экспорт в CSV
   function exportToCSV() {
     if (filteredEvents.length === 0) {
       alert('Нет данных для экспорта');
       return;
     }
 
-    // Подтверждение экспорта с количеством записей
     const count = filteredEvents.length;
     const countText = count === 1 ? 'запись' : count < 5 ? 'записи' : 'записей';
     if (!confirm(`Экспортировать ${count} ${countText} в CSV?\n\nЭкспортируются только отфильтрованные данные.`)) {
       return;
     }
 
-    // Заголовки CSV
     const headers = ['Время', 'ФИО', 'Организация', 'Статус', 'Точка доступа'];
     const rows = [headers.join(',')];
 
-    // Функция для экранирования CSV значений
     const escapeCSV = (text) => {
       if (text === null || text === undefined) return '';
       const str = String(text);
-      // Если содержит кавычки, запятые или переносы строк - экранируем
       if (str.includes('"') || str.includes(',') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
       return `"${str}"`;
     };
 
-    // Данные (используем filteredEvents - только отфильтрованные данные)
     filteredEvents.forEach(event => {
       const date = new Date(event.timestamp);
       const formattedTime = date.toLocaleString('ru-RU', {
@@ -485,18 +416,14 @@
       rows.push(row.join(','));
     });
 
-    // Создаем CSV содержимое
     const csvContent = rows.join('\n');
     
-    // Создаем BOM для правильной кодировки в Excel
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     
-    // Создаем ссылку для скачивания
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
-    // Формируем имя файла с датой
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const filename = `statistics_${dateStr}.csv`;
@@ -508,22 +435,15 @@
     link.click();
     document.body.removeChild(link);
     
-    // Освобождаем память
     URL.revokeObjectURL(url);
   }
 
-  // Функция debounce для задержки выполнения
   function debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
+    return function(...args) {
       clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
+      timeout = setTimeout(() => func(...args), wait);
     };
   }
 
 })();
-

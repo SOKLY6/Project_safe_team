@@ -3,12 +3,10 @@
 
   const TOKEN_KEY = 'auth_token';
 
-  // Получить токен из localStorage
   function getToken() {
     return localStorage.getItem(TOKEN_KEY);
   }
 
-  // Декодировать JWT токен (без проверки подписи, только для получения данных)
   function decodeToken(token) {
     try {
       const base64Url = token.split('.')[1];
@@ -22,7 +20,6 @@
     }
   }
 
-  // Получить роль текущего пользователя
   function getCurrentUserRole() {
     const token = getToken();
     if (!token) return null;
@@ -31,7 +28,6 @@
     return decoded ? decoded.role : null;
   }
 
-  // Получить username текущего пользователя
   function getCurrentUsername() {
     const token = getToken();
     if (!token) return null;
@@ -40,17 +36,14 @@
     return decoded ? decoded.sub : null;
   }
 
-  // Проверить, является ли пользователь администратором
   function isAdmin() {
     return getCurrentUserRole() === 'admin';
   }
 
-  // Проверить, является ли пользователь охранником
   function isGuard() {
     return getCurrentUserRole() === 'guard';
   }
 
-  // Получить заголовки для авторизованных запросов
   function getAuthHeaders() {
     const token = getToken();
     if (!token) return {};
@@ -61,18 +54,15 @@
     };
   }
 
-  // Проверить, авторизован ли пользователь
   function isAuthenticated() {
     return getToken() !== null;
   }
 
-  // Выйти (удалить токен)
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     window.location.href = 'login.html';
   }
 
-  // Экспорт функций в глобальную область видимости
   window.authUtils = {
     getToken,
     getCurrentUserRole,
@@ -86,4 +76,3 @@
   };
 
 })();
-

@@ -60,9 +60,7 @@
                 <small class="form-text text-muted mt-2 d-block">Можно вставить текст QR-кода или отсканировать его</small>
               </div>
 
-              <!-- Контейнер для индикатора загрузки и результатов -->
               <div id="result-container" class="mb-4">
-                <!-- Индикатор загрузки -->
                 <div id="loading-indicator" class="qr-loading-indicator" style="display: none;">
                   <div class="text-center w-100">
                     <div class="spinner-border text-primary" role="status" aria-hidden="true">
@@ -72,7 +70,6 @@
                   </div>
                 </div>
 
-                <!-- Результат проверки - карточка успеха -->
                 <div id="result-card-success" class="qr-result-card qr-result-success" style="display: none;" role="alert">
                   <div class="d-flex align-items-start">
                     <div class="qr-result-icon me-3">
@@ -86,7 +83,6 @@
                   </div>
                 </div>
 
-                <!-- Результат проверки - карточка отказа -->
                 <div id="result-card-error" class="qr-result-card qr-result-error" style="display: none;" role="alert">
                   <div class="d-flex align-items-start">
                     <div class="qr-result-icon me-3">
@@ -115,7 +111,6 @@
           </div>
         </div>
 
-        <!-- Блок истории проверок -->
         <div class="card border-0 shadow-sm rounded-4 mt-4">
           <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -132,7 +127,6 @@
               </div>
             </div>
 
-            <!-- Поиск по истории -->
             <div id="history-search-container" class="mb-3" style="display: none;">
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -148,7 +142,6 @@
               </div>
             </div>
 
-            <!-- Список истории -->
             <div id="history-container" style="display: none;">
               <div id="history-list" class="list-group"></div>
               <div id="history-empty" class="text-center text-muted py-4" style="display: none;">
@@ -170,7 +163,6 @@
   <script src="js/auth-utils.js"></script>
   <script src="js/scan_qr.js"></script>
   <script>
-    // Показываем ссылку на охранников для админа
     document.addEventListener('DOMContentLoaded', function() {
       if (window.authUtils && window.authUtils.isAdmin()) {
         const staffLink = document.getElementById('staff-nav-link');
@@ -180,5 +172,3 @@
   </script>
 </body>
 </html>
-
-

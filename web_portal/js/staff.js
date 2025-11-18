@@ -1,18 +1,8 @@
 (function() {
   'use strict';
 
-  // API конфигурация
-  const getApiBaseUrl = () => {
-    const origin = window.location.origin;
-    const hostname = window.location.hostname;
-    const port = window.location.port === '8001' ? '8000' : (window.location.port || '8000');
-    const protocol = window.location.protocol;
-    
-    return `${protocol}//${hostname}:${port}`;
-  };
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = `http://${window.location.hostname}:8000`;
 
-  // Элементы DOM
   const loadingIndicator = document.getElementById('loading-indicator');
   const errorMessage = document.getElementById('error-message');
   const errorText = document.getElementById('error-text');
@@ -24,10 +14,8 @@
   const saveStaffBtn = document.getElementById('save-staff-btn');
   const addStaffModal = new bootstrap.Modal(document.getElementById('addStaffModal'));
 
-  // Проверка прав доступа
   document.addEventListener('DOMContentLoaded', function() {
     if (!window.authUtils || !window.authUtils.isAdmin()) {
-      // Если не админ, перенаправляем на главную
       window.location.href = 'dashboard.html';
       return;
     }
@@ -39,7 +27,6 @@
     saveStaffBtn.addEventListener('click', saveStaff);
   });
 
-  // Загрузка списка охранников
   async function loadStaff() {
     showLoading();
     hideError();
@@ -75,11 +62,9 @@
     }
   }
 
-  // Отображение списка охранников (только GUARD, без админов)
   function renderStaff(staffList) {
     staffTbody.innerHTML = '';
     
-    // Фильтруем только охранников (GUARD), исключаем админов
     const guardsOnly = staffList.filter(staff => staff.role === 'guard');
     
     noData.style.display = guardsOnly.length === 0 ? 'block' : 'none';
@@ -94,7 +79,6 @@
     });
   }
 
-  // Создание строки таблицы для охранника
   function createStaffRow(staff) {
     const row = document.createElement('tr');
     
@@ -119,7 +103,6 @@
     return row;
   }
 
-  // Сохранение нового охранника
   async function saveStaff() {
     const username = document.getElementById('staff-username').value.trim();
     const password = document.getElementById('staff-password').value;
@@ -131,7 +114,6 @@
 
     try {
       const headers = window.authUtils.getAuthHeaders();
-      // Эндпоинт создает охранника с ролью GUARD по умолчанию
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: headers,
@@ -156,7 +138,6 @@
     }
   }
 
-  // Удаление охранника
   window.deleteStaff = async function(staffId, username) {
     if (!window.authUtils || !window.authUtils.isAdmin()) {
       alert('Доступ запрещен');
@@ -187,7 +168,6 @@
     }
   };
 
-  // Вспомогательные функции для управления UI
   function showLoading() {
     loadingIndicator.style.display = 'block';
   }
@@ -220,4 +200,3 @@
   }
 
 })();
-
