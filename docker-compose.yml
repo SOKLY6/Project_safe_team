@@ -20,7 +20,7 @@ services:
       context: .
       dockerfile: ./telegram_bot/Dockerfile
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///app/data/test.db
+      - DATABASE_URL=sqlite+aiosqlite:///./test.db
       - BOT_TOKEN
     depends_on:
       - app
