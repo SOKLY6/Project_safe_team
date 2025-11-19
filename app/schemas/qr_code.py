@@ -3,9 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class QRCodeCreate(BaseModel):
+class QRCodeCreateRequest(BaseModel):
     user_id: int
     organization_id: int
+    validity_hours: int = 1
 
 
 class QRCodeResponse(BaseModel):
@@ -31,4 +32,4 @@ class QRCodeActiveResponse(BaseModel):
 
 class QRCodeVerify(BaseModel):
     qr_data: str
-    scanner_id: str
+    scanner_id: str = 'web_scanner'

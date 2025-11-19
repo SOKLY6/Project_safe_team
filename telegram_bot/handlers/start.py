@@ -1,4 +1,3 @@
-from sqlalchemy import select
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import (
     CommandHandler,
@@ -8,21 +7,43 @@ from telegram.ext import (
     filters,
 )
 
-from app.database import async_session
-from app.models.organization import Organization
-from app.models.user import User
 from telegram_bot.keyboards.main_menu import (
+    get_guest_keyboard,
     get_main_keyboard,
 )
+from telegram_bot.services.api_client import api_client
 
 WAITING_FOR_NAME, WAITING_FOR_ORG = range(2)
 
 
 async def get_organizations_list():
-    async with async_session() as session:
-        result = await session.execute(select(Organization))
-        orgs = result.scalars().all()
-        return [org.name for org in orgs]
+    orgs = await api_client.get_organizations()
+    return [org['name'] for org in orgs]
+
+
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    telegram_id = update.effective_user.id
+
+    existing_user = await api_client.get_user_by_telegram_id(telegram_id)
+
+    # existing_user будет None если пользователь не найден (404) или ошибка сервера
+    # Но нам нужно различать эти случаи!
+
+    if existing_user:
+        # Пользователь найден
+        await update.message.reply_text(
+            f'✅ Добро пожаловать, {existing_user["name"]}!\n'
+            'Выберите действие в меню:',
+            reply_markup=get_main_keyboard(),
+        )
+    else:
+        # Пользователь не найден - показываем регистрацию
+        await update.message.reply_text(
+            '👋 Добро пожаловать в генератор QR-пропусков!\n\n'
+            '❌ Вы не зарегистрированы.\n'
+            'Нажмите "📝 Регистрация" для начала работы.',
+            reply_markup=get_guest_keyboard(),
+        )
 
 
 async def start_registration(
@@ -30,23 +51,17 @@ async def start_registration(
 ):
     telegram_id = update.effective_user.id
 
-    async with async_session() as session:
-        result = await session.execute(
-            select(User).filter(User.telegram_id == telegram_id)
-        )
-        existing_user = result.scalar_one_or_none()
+    existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
-        if existing_user:
-            await update.message.reply_text(
-                f'✅ Вы уже зарегистрированы как {existing_user.name}',
-                reply_markup=get_main_keyboard(),
-            )
-            return ConversationHandler.END
+    if existing_user:
+        await update.message.reply_text(
+            f'✅ Вы уже зарегистрированы как {existing_user["name"]}',
+            reply_markup=get_main_keyboard(),
+        )
+        return ConversationHandler.END
 
     await update.message.reply_text(
-        '🤖 Добро пожаловать в генератор QR-пропусков!\n'
-        'Для начала работы пройдите регистрацию!\n'
-        'Пожалуйста, введите ваше ФИО:'
+        '📝 Регистрация нового пользователя\n\nПожалуйста, введите ваше ФИО:'
     )
     return WAITING_FOR_NAME
 
@@ -58,12 +73,13 @@ async def save_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not organizations:
         await update.message.reply_text(
-            '❌ В базе нет организаций. Обратитесь к администратору.'
+            '❌ В базе нет организаций.\nОбратитесь к администратору.',
+            reply_markup=get_guest_keyboard(),
         )
         return ConversationHandler.END
 
     await update.message.reply_text(
-        'Выберите вашу организацию:',
+        '🏢 Выберите вашу организацию:',
         reply_markup=ReplyKeyboardMarkup(
             [[org] for org in organizations],
             one_time_keyboard=True,
@@ -73,81 +89,58 @@ async def save_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return WAITING_FOR_ORG
 
 
-async def check_user_in_database(name: str, organization_name: str):
-    async with async_session() as session:
-        org_result = await session.execute(
-            select(Organization).filter(Organization.name == organization_name)
-        )
-        org = org_result.scalar_one_or_none()
-
-        if not org:
-            return False, None
-
-        user_result = await session.execute(
-            select(User).filter(
-                User.name == name, User.organization_id == org.id
-            )
-        )
-        user = user_result.scalar_one_or_none()
-
-        return user is not None, org.id if org else None
-
-
-async def save_organization_and_check(
+async def save_organization_and_register(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
-    org = update.message.text
+    org_name = update.message.text
     name = context.user_data.get('name')
     telegram_id = update.effective_user.id
 
-    organizations = await get_organizations_list()
+    organizations = await api_client.get_organizations()
+    org = next((o for o in organizations if o['name'] == org_name), None)
 
-    if org not in organizations:
+    if not org:
         await update.message.reply_text(
-            'Пожалуйста, выберите организацию из списка!'
+            '❌ Пожалуйста, выберите организацию из списка!'
         )
         return WAITING_FOR_ORG
 
-    context.user_data['organization'] = org
+    user = await api_client.register_user(telegram_id, name, org['id'])
 
-    user_exists, org_id = await check_user_in_database(name, org)
-
-    if user_exists:
-        async with async_session() as session:
-            result = await session.execute(
-                select(User).filter(
-                    User.name == name, User.organization_id == org_id
-                )
-            )
-            existing_user = result.scalar_one_or_none()
-
-            if existing_user and not existing_user.telegram_id:
-                existing_user.telegram_id = telegram_id
-                await session.commit()
-
+    if user:
         await update.message.reply_text(
-            f'✅ Спасибо, {name}!\nОрганизация: {org}\nРегистрация завершена.',
+            f'✅ Регистрация успешна!\n\n'
+            f'👤 Имя: {name}\n'
+            f'🏢 Организация: {org_name}\n\n'
+            f'Теперь вы можете пользоваться всеми функциями бота!',
             reply_markup=get_main_keyboard(),
         )
         return ConversationHandler.END
     else:
         await update.message.reply_text(
-            '❌ Не найдено совпадение ФИО или организации в базе.\n'
-            'Попробуйте снова:\nВведите ФИО:'
+            '❌ Ошибка регистрации.\nПопробуйте позже.',
+            reply_markup=get_guest_keyboard(),
         )
-        return WAITING_FOR_NAME
+        return ConversationHandler.END
 
 
 async def cancel_registration(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ):
-    await update.message.reply_text('Регистрация отменена.')
+    await update.message.reply_text(
+        'Регистрация отменена.',
+        reply_markup=get_guest_keyboard(),
+    )
     return ConversationHandler.END
 
 
 def setup_start_handlers(application):
+    application.add_handler(CommandHandler('start', start_command))
+
     registration_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start_registration)],
+        entry_points=[
+            MessageHandler(filters.Regex('📝 Регистрация'), start_registration)
+        ],
         states={
             WAITING_FOR_NAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, save_name)
@@ -155,10 +148,11 @@ def setup_start_handlers(application):
             WAITING_FOR_ORG: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    save_organization_and_check,
+                    save_organization_and_register,
                 )
             ],
         },
         fallbacks=[CommandHandler('cancel', cancel_registration)],
     )
+
     application.add_handler(registration_handler)

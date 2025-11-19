@@ -10,7 +10,7 @@ from app.models.qr_code import QRCode
 from app.models.user import User
 from app.schemas.qr_code import (
     QRCodeActiveResponse,
-    QRCodeCreate,
+    QRCodeCreateRequest,
     QRCodeResponse,
     QRCodeVerify,
 )
@@ -21,19 +21,31 @@ from app.services.qr_service import (
 from app.services.scanner_service import verify_qr_code_fast
 from app.services.verification_service import verify_qr_code
 
-router = APIRouter(prefix='/qr', tags=['QR Verification'])
+router = APIRouter(prefix='/qr', tags=['QR Codes'])
 
 
-@router.post('/generate/{user_id}', response_model=QRCodeResponse)
+@router.post('/generate', response_model=QRCodeResponse)
 async def generate_qr(
-    user_id: int,
-    organization_id: int = Query(...),
+    request: QRCodeCreateRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    qr_code = await create_qr_code(user_id, organization_id, db)
+    qr_code = await create_qr_code(
+        request.user_id, request.organization_id, db
+    )
     if not qr_code:
         raise HTTPException(status_code=404, detail='User not found')
     return qr_code
+
+
+@router.get('/user/{user_id}', response_model=list[QRCodeResponse])
+async def get_user_qr_codes(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(QRCode)
+        .filter(QRCode.user_id == user_id)
+        .order_by(QRCode.created_at.desc())
+    )
+    qr_codes = result.scalars().all()
+    return qr_codes
 
 
 @router.get('/active/{user_id}', response_model=QRCodeResponse)
@@ -46,7 +58,9 @@ async def get_active(user_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.put('/update/{qr_id}', response_model=QRCodeResponse)
 async def update_qr(
-    qr_id: int, qr_data: QRCodeCreate, db: AsyncSession = Depends(get_db)
+    qr_id: int,
+    qr_data: QRCodeCreateRequest,
+    db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(QRCode).filter(QRCode.id == qr_id))
     qr_code = result.scalar_one_or_none()
@@ -128,6 +142,25 @@ async def delete_qr(qr_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.post('/scanner/verify')
 async def verify_qr_scanner(
+    request: QRCodeVerify, db: AsyncSession = Depends(get_db)
+):
+    result = await verify_qr_code_fast(request.qr_data, request.scanner_id, db)
+    return result
+
+
+legacy_router = APIRouter(prefix='/qr', tags=['QR Verification (Legacy)'])
+
+
+@legacy_router.post('/verify')
+async def verify_qr_endpoint_legacy(
+    request: QRCodeVerify, db: AsyncSession = Depends(get_db)
+):
+    result = await verify_qr_code(request.qr_data, request.scanner_id, db)
+    return result
+
+
+@legacy_router.post('/scanner/verify')
+async def verify_qr_scanner_legacy(
     request: QRCodeVerify, db: AsyncSession = Depends(get_db)
 ):
     result = await verify_qr_code_fast(request.qr_data, request.scanner_id, db)

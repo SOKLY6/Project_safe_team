@@ -9,5 +9,4 @@ def setup_logging():
 
 
 def format_message(text: str) -> str:
-    """Форматирует текст сообщения"""
     return f'✨ {text.upper()} ✨'

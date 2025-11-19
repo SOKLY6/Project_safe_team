@@ -11,17 +11,13 @@ class Organization(Base):
     name = Column(String(100), unique=True, nullable=False)
 
     users = relationship(
-        'User', 
-        back_populates='organization',
-        cascade='all, delete-orphan'
+        'User', back_populates='organization', cascade='all, delete-orphan'
     )
     qr_codes = relationship(
-        'QRCode',
-        back_populates='organization',
-        cascade='all, delete-orphan'
+        'QRCode', back_populates='organization', cascade='all, delete-orphan'
     )
     access_logs = relationship(
         'AccessLog',
         back_populates='organization',
-        cascade='all, delete-orphan'
+        cascade='all, delete-orphan',
     )

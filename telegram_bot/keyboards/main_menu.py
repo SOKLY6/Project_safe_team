@@ -7,3 +7,11 @@ def get_main_keyboard():
         [KeyboardButton('📊 Статистика'), KeyboardButton('🆔 Мой QR-код')],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+
+def get_guest_keyboard():
+    keyboard = [
+        [KeyboardButton('📝 Регистрация')],
+        [KeyboardButton('🆘 Помощь')],
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
