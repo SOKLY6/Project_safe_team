@@ -26,18 +26,13 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
-    # existing_user будет None если пользователь не найден (404) или ошибка сервера
-    # Но нам нужно различать эти случаи!
-
     if existing_user:
-        # Пользователь найден
         await update.message.reply_text(
             f'✅ Добро пожаловать, {existing_user["name"]}!\n'
             'Выберите действие в меню:',
             reply_markup=get_main_keyboard(),
         )
     else:
-        # Пользователь не найден - показываем регистрацию
         await update.message.reply_text(
             '👋 Добро пожаловать в генератор QR-пропусков!\n\n'
             '❌ Вы не зарегистрированы.\n'
