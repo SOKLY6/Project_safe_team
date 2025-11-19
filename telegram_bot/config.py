@@ -1,10 +1,9 @@
 import os
 
-from dotenv import load_dotenv
+from decouple import config
 
-load_dotenv()
+BOT_TOKEN = config('BOT_TOKEN')
 
-BOT_TOKEN = os.getenv('BOT_TOKEN')
 ADMIN_IDS = (
     list(map(int, os.getenv('ADMIN_IDS', '').split(',')))
     if os.getenv('ADMIN_IDS')
