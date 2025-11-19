@@ -14,6 +14,7 @@ services:
     volumes:
       - app_data:/usr/src/app/data
 
+
   telegram_bot:
     image: telegram_bot
     build:
@@ -22,10 +23,12 @@ services:
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////app/data/test.db
       - BOT_TOKEN
+      - API_BASE_URL=http://app:8000
     depends_on:
       - app
     volumes:
       - app_data:/app/data
+
 
   web_portal:
     image: web_portal
@@ -37,6 +40,7 @@ services:
       - app
     volumes:
       - app_data:/usr/src/app/data
+
 
 volumes:
   app_data:

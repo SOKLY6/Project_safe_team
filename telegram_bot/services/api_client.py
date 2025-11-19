@@ -1,10 +1,12 @@
 import logging
 from typing import Optional
-
 import httpx
+import os
 
-API_BASE_URL = 'http://127.0.0.1:8000'
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 logger = logging.getLogger(__name__)
+
+logger.info(f"🔧 API_BASE_URL: {API_BASE_URL}")
 
 
 class APIClient:
@@ -23,7 +25,7 @@ class APIClient:
                 if response.status_code == 200:
                     return response.json()
                 elif response.status_code == 404:
-                    return None  # Пользователь не найден - это нормально
+                    return None
                 else:
                     logger.error(f'Неожиданный статус {response.status_code}')
                     return None
