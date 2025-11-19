@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./test.db
+      - DATABASE_URL=sqlite+aiosqlite:////usr/src/app/data/test.db
       - JWT_TOKEN
       - JWT_ALGORITHM
       - ACCESS_TOKEN_EXPIRE_MINUTES
@@ -20,7 +20,7 @@ services:
       context: .
       dockerfile: ./telegram_bot/Dockerfile
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./test.db
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/test.db
       - BOT_TOKEN
     depends_on:
       - app
@@ -35,6 +35,8 @@ services:
       - "8001:8001"
     depends_on:
       - app
+    volumes:
+      - app_data:/usr/src/app/data
 
 volumes:
   app_data:
