@@ -14,7 +14,6 @@ async def init_db():
             select(Staff).where(Staff.role == StaffRole.ADMIN)
         )
         if result.scalar_one_or_none():
-            print('⚠️  Админ уже существует')
             return
 
         admin = Staff(
@@ -24,7 +23,6 @@ async def init_db():
         )
         db.add(admin)
         await db.commit()
-        print('✅ Админ создан! Логин: admin, Пароль: admin123')
 
 
 if __name__ == '__main__':
