@@ -88,7 +88,7 @@ async def qr_generation(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_photo(
         photo=bio,
-        caption=f'✅ QR-код действителен 24 часа\n👤 Имя: {user["name"]}',
+        caption=f'✅ QR-код действителен 1 минуту\n👤 Имя: {user["name"]}',
     )
 
 
