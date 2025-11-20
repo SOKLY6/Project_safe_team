@@ -6,6 +6,7 @@ lint:
 	ruff format .
 	@echo "Запуск ruff check --fix..."
 	ruff check --fix
+	ruff check .
 
 .PHONY: runserver
 runserver:
