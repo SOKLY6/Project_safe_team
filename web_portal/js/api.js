@@ -14,7 +14,7 @@
           fields: [
             { name: 'telegram_id', type: 'number', required: true, label: 'Telegram ID' },
             { name: 'name', type: 'text', required: true, label: 'Имя' },
-            { name: 'organization_id', type: 'number', required: false, label: 'ID организации' }
+            { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
           ]
         },
         {
@@ -41,8 +41,8 @@
             { name: 'user_id', type: 'number', required: true, label: 'ID пользователя' }
           ],
           fields: [
-            { name: 'name', type: 'text', required: false, label: 'Имя' },
-            { name: 'organization_id', type: 'number', required: false, label: 'ID организации' }
+            { name: 'name', type: 'text', required: true, label: 'Имя' },
+            { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
           ]
         },
         {
@@ -53,8 +53,8 @@
             { name: 'telegram_id', type: 'number', required: true, label: 'Telegram ID' }
           ],
           fields: [
-            { name: 'name', type: 'text', required: false, label: 'Имя' },
-            { name: 'organization_id', type: 'number', required: false, label: 'ID организации' }
+            { name: 'name', type: 'text', required: true, label: 'Имя' },
+            { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
           ]
         },
         {
@@ -107,7 +107,7 @@
             { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
           ],
           fields: [
-            { name: 'name', type: 'text', required: false, label: 'Название' }
+            { name: 'name', type: 'text', required: true, label: 'Название' }
           ]
         },
         {
@@ -168,7 +168,7 @@
           path: '/qr/active',
           name: 'Получить активные QR коды',
           queryParams: [
-            { name: 'organization_id', type: 'number', required: false, label: 'ID организации' }
+            { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
           ]
         },
         {
@@ -189,8 +189,8 @@
           path: '/access-logs/',
           name: 'Получить логи доступа',
           queryParams: [
-            { name: 'limit', type: 'number', required: false, label: 'Лимит (1-500)', defaultValue: '50' },
-            { name: 'offset', type: 'number', required: false, label: 'Смещение', defaultValue: '0' }
+            { name: 'limit', type: 'number', required: true, label: 'Лимит (1-500)', defaultValue: '50' },
+            { name: 'offset', type: 'number', required: true, label: 'Смещение', defaultValue: '0' }
           ]
         }
       ]
@@ -205,7 +205,7 @@
           fields: [
             { name: 'username', type: 'text', required: true, label: 'Логин' },
             { name: 'password', type: 'password', required: true, label: 'Пароль' },
-            { name: 'role', type: 'select', required: false, label: 'Роль', options: ['guard', 'admin'], defaultValue: 'guard' }
+            { name: 'role', type: 'select', required: true, label: 'Роль', options: ['guard', 'admin'], defaultValue: 'guard' }
           ]
         },
         {
@@ -276,15 +276,15 @@
       if (!params.length) return '';
       return `<div class="mb-3">` + params.map(p => {
         const inputId = `${prefix}-${id}-${p.name}`;
-        const label = `${p.label} ${p.required ? '<span class="text-danger">*</span>' : '<span class="text-muted small">(необяз)</span>'}`;
+        const label = `${p.label} <span class="text-danger">*</span>`;
         
         let input = '';
         if (p.type === 'select') {
-          input = `<select class="form-control" id="${inputId}">
+          input = `<select class="form-control" id="${inputId}" required>
             ${p.options.map(o => `<option value="${o}" ${p.defaultValue === o ? 'selected' : ''}>${o}</option>`).join('')}
           </select>`;
         } else {
-          input = `<input type="${p.type}" class="form-control" id="${inputId}" ${p.required ? 'required' : ''} value="${p.defaultValue || ''}">`;
+          input = `<input type="${p.type}" class="form-control" id="${inputId}" required value="${p.defaultValue || ''}">`;
         }
         
         return `<div class="form-group mb-2"><label class="form-label" for="${inputId}">${label}</label>${input}</div>`;
@@ -310,7 +310,7 @@
         const qp = new URLSearchParams();
         ep.queryParams?.forEach(p => {
           const val = document.getElementById(`query-${id}-${p.name}`).value;
-          if (val) qp.append(p.name, val);
+          qp.append(p.name, val);
         });
         if (qp.toString()) url += '?' + qp;
         
@@ -319,9 +319,9 @@
           const data = {};
           ep.fields.forEach(f => {
             const val = document.getElementById(`field-${id}-${f.name}`).value;
-            if (val) data[f.name] = f.type === 'number' ? Number(val) : val;
+            data[f.name] = f.type === 'number' ? Number(val) : val;
           });
-          if (Object.keys(data).length) body = JSON.stringify(data);
+          body = JSON.stringify(data);
         }
 
         const res = await fetch(url, {
