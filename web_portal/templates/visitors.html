@@ -6,7 +6,7 @@
   <title>Посетители</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="../css/style.css">
 </head>
 <body class="auth-bg">
   <nav class="navbar navbar-expand-lg bg-body-tertiary mb-3">
@@ -37,9 +37,11 @@
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body p-4 p-md-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <h1 class="h4 mb-0">
-                <i class="bi bi-person-lines-fill me-2"></i>Пользователи
-              </h1>
+              <div class="d-flex align-items-center gap-3">
+                <h1 class="h4 mb-0">
+                  <i class="bi bi-person-lines-fill me-2"></i>Пользователи
+                </h1>
+              </div>
               <div class="d-flex gap-2">
                 <button id="export-btn" class="btn btn-outline-success btn-sm">
                   <i class="bi bi-download me-1"></i>Экспорт CSV
@@ -50,9 +52,11 @@
               </div>
             </div>
 
+            
             <div class="card border-0 bg-light mb-4">
               <div class="card-body p-3">
                 <div class="row g-3">
+                  
                   <div class="col-12 col-md-3">
                     <label for="date-from" class="form-label small fw-semibold">Дата от</label>
                     <input type="date" id="date-from" class="form-control form-control-sm">
@@ -61,6 +65,7 @@
                     <label for="date-to" class="form-label small fw-semibold">Дата до</label>
                     <input type="date" id="date-to" class="form-control form-control-sm">
                   </div>
+                  
                   <div class="col-12 col-md-3">
                     <label for="organization-filter" class="form-label small fw-semibold">Организация</label>
                     <select id="organization-filter" class="form-select form-select-sm">
@@ -116,7 +121,7 @@
                       <th scope="col" style="width: 200px;">Организация</th>
                       <th scope="col" style="width: 180px;">Первый вход</th>
                       <th scope="col" style="width: 180px;">Последний вход</th>
-                      <th scope="col" style="width: 120px;">Всего посещений</th>
+                      <th scope="col" style="width: 120px;">Всего визитов</th>
                       <th scope="col" style="width: 120px;">Разрешено</th>
                       <th scope="col" style="width: 120px;">Запрещено</th>
                       <th scope="col" style="width: 100px; display: none;" id="actions-header">Действия</th>
@@ -148,7 +153,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-  <script src="js/auth-utils.js"></script>
-  <script src="js/visitors.js"></script>
+  <script src="../js/auth-utils.js"></script>
+  <script src="../js/visitors.js"></script>
 </body>
 </html>
