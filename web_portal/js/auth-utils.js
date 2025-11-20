@@ -1,57 +1,78 @@
-const TOKEN_KEY = 'auth_token';
+(function() {
+  'use strict';
 
-const authUtils = {
-  getToken() {
+  const TOKEN_KEY = 'auth_token';
+
+  function getToken() {
     return localStorage.getItem(TOKEN_KEY);
-  },
-  decodeToken(token) {
+  }
+
+  function decodeToken(token) {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
       return JSON.parse(jsonPayload);
     } catch (e) {
       return null;
     }
-  },
-  getCurrentUserRole() {
-    const token = this.getToken();
+  }
+
+  function getCurrentUserRole() {
+    const token = getToken();
     if (!token) return null;
-    const decoded = this.decodeToken(token);
-    return decoded?.role || null;
-  },
-  getCurrentUsername() {
-    const token = this.getToken();
+    
+    const decoded = decodeToken(token);
+    return decoded ? decoded.role : null;
+  }
+
+  function getCurrentUsername() {
+    const token = getToken();
     if (!token) return null;
-    const decoded = this.decodeToken(token);
-    return decoded?.sub || null;
-  },
-  isAdmin() {
-    return this.getCurrentUserRole() === 'admin';
-  },
-  isGuard() {
-    return this.getCurrentUserRole() === 'guard';
-  },
-  getAuthHeaders() {
-    const token = this.getToken();
+    
+    const decoded = decodeToken(token);
+    return decoded ? decoded.sub : null;
+  }
+
+  function isAdmin() {
+    return getCurrentUserRole() === 'admin';
+  }
+
+  function isGuard() {
+    return getCurrentUserRole() === 'guard';
+  }
+
+  function getAuthHeaders() {
+    const token = getToken();
     if (!token) return {};
+    
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     };
-  },
-  isAuthenticated() {
-    return this.getToken() !== null;
-  },
-  logout() {
+  }
+
+  function isAuthenticated() {
+    return getToken() !== null;
+  }
+
+  function logout() {
     localStorage.removeItem(TOKEN_KEY);
     window.location.href = 'login.html';
   }
-};
 
-window.authUtils = authUtils;
+  window.authUtils = {
+    getToken,
+    getCurrentUserRole,
+    getCurrentUsername,
+    isAdmin,
+    isGuard,
+    getAuthHeaders,
+    isAuthenticated,
+    logout,
+    decodeToken
+  };
+
+})();
