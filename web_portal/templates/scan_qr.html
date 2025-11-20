@@ -23,6 +23,7 @@
           <li class="nav-item"><a class="nav-link" href="visitors.html">Посетители</a></li>
           <li class="nav-item"><a class="nav-link" href="statistics.html">Статистика</a></li>
           <li class="nav-item"><a class="nav-link" href="staff.html" id="staff-nav-link" style="display: none;">Охранники</a></li>
+          <li class="nav-item"><a class="nav-link" href="api.html" id="api-nav-link" style="display: none;">API</a></li>
         </ul>
         <div class="d-flex gap-2">
           <a class="btn btn-primary" href="login.html">Выход</a>
@@ -47,15 +48,7 @@
             <form id="scan-qr-form">
               <div class="mb-4">
                 <label for="qr-input" class="form-label fw-semibold">QR-код</label>
-                <textarea 
-                  id="qr-input" 
-                  name="qr_code" 
-                  class="form-control" 
-                  rows="8" 
-                  placeholder="Вставьте QR-код здесь или введите вручную..."
-                  autocomplete="off"
-                  spellcheck="false"
-                  style="font-family: 'Courier New', monospace; font-size: 14px; resize: vertical; min-height: 200px;"></textarea>
+                <textarea id="qr-input" name="qr_code" class="form-control" rows="8" placeholder="Вставьте QR-код здесь или введите вручную..." autocomplete="off" spellcheck="false" style="font-family: 'Courier New', monospace; font-size: 14px; resize: vertical; min-height: 200px;"></textarea>
                 <div class="invalid-feedback" id="qr-error" aria-live="polite"></div>
                 <small class="form-text text-muted mt-2 d-block">Можно вставить текст QR-кода или отсканировать его</small>
               </div>
@@ -130,12 +123,7 @@
             <div id="history-search-container" class="mb-3" style="display: none;">
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input 
-                  type="text" 
-                  id="history-search" 
-                  class="form-control" 
-                  placeholder="Поиск по истории..."
-                  autocomplete="off">
+                <input type="text" id="history-search" class="form-control" placeholder="Поиск по истории..." autocomplete="off">
                 <button type="button" id="clear-search" class="btn btn-outline-secondary" style="display: none;">
                   <i class="bi bi-x"></i>
                 </button>
@@ -167,6 +155,8 @@
       if (window.authUtils && window.authUtils.isAdmin()) {
         const staffLink = document.getElementById('staff-nav-link');
         if (staffLink) staffLink.style.display = 'block';
+        const apiLink = document.getElementById('api-nav-link');
+        if (apiLink) apiLink.style.display = 'block';
       }
     });
   </script>
