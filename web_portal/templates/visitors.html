@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Статистика</title>
+  <title>Посетители</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
@@ -19,9 +19,10 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link" aria-current="page" href="dashboard.html">Панель</a></li>
           <li class="nav-item"><a class="nav-link" href="scan_qr.html">Проверка QR</a></li>
-          <li class="nav-item"><a class="nav-link" href="visitors.html">Посетители</a></li>
-          <li class="nav-item"><a class="nav-link active" href="statistics.html">Статистика</a></li>
+          <li class="nav-item"><a class="nav-link active" href="visitors.html">Посетители</a></li>
+          <li class="nav-item"><a class="nav-link" href="statistics.html">Статистика</a></li>
           <li class="nav-item"><a class="nav-link" href="staff.html" id="staff-nav-link" style="display: none;">Охранники</a></li>
+          <li class="nav-item"><a class="nav-link" href="api.html" id="api-nav-link" style="display: none;">API</a></li>
         </ul>
         <div class="d-flex gap-2">
           <a class="btn btn-primary" href="login.html">Выход</a>
@@ -36,11 +37,9 @@
         <div class="card border-0 shadow-sm rounded-4">
           <div class="card-body p-4 p-md-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <div class="d-flex align-items-center gap-3">
-                <h1 class="h4 mb-0">
-                  <i class="bi bi-bar-chart-fill me-2"></i>Статистика событий доступа
-                </h1>
-              </div>
+              <h1 class="h4 mb-0">
+                <i class="bi bi-person-lines-fill me-2"></i>Пользователи
+              </h1>
               <div class="d-flex gap-2">
                 <button id="export-btn" class="btn btn-outline-success btn-sm">
                   <i class="bi bi-download me-1"></i>Экспорт CSV
@@ -62,26 +61,13 @@
                     <label for="date-to" class="form-label small fw-semibold">Дата до</label>
                     <input type="date" id="date-to" class="form-control form-control-sm">
                   </div>
-                  
-
-                  <div class="col-12 col-md-2">
-                    <label for="status-filter" class="form-label small fw-semibold">Статус</label>
-                    <select id="status-filter" class="form-select form-select-sm">
-                      <option value="all">Все</option>
-                      <option value="granted">Разрешён</option>
-                      <option value="denied">Запрещён</option>
-                    </select>
-                  </div>
-
-                  <div class="col-12 col-md-2">
+                  <div class="col-12 col-md-3">
                     <label for="organization-filter" class="form-label small fw-semibold">Организация</label>
                     <select id="organization-filter" class="form-select form-select-sm">
                       <option value="all">Все</option>
                     </select>
                   </div>
-                  
-
-                  <div class="col-12 col-md-2">
+                  <div class="col-12 col-md-3">
                     <label for="search-name" class="form-label small fw-semibold">Поиск по ФИО</label>
                     <input type="text" id="search-name" class="form-control form-control-sm" placeholder="Введите ФИО...">
                   </div>
@@ -109,32 +95,34 @@
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Загрузка...</span>
               </div>
-              <p class="mt-2 text-muted small">Загрузка событий...</p>
+              <p class="mt-2 text-muted small">Загрузка пользователей...</p>
             </div>
 
             <div id="error-message" class="alert alert-danger" style="display: none;" role="alert">
               <i class="bi bi-exclamation-triangle-fill me-2"></i>
               <span id="error-text"></span>
             </div>
-
             <div id="table-container" style="display: none;">
               <div class="table-responsive">
                 <table class="table table-hover align-middle">
                   <thead class="table-light">
                     <tr>
-                      <th scope="col" style="width: 180px;">
+                      <th scope="col" style="width: 200px;">
                         <div class="d-flex align-items-center">
-                          <span>Время</span>
+                          <span>ФИО</span>
                           <i class="bi bi-arrow-down-up ms-2 text-muted" style="font-size: 0.875rem;"></i>
                         </div>
                       </th>
-                      <th scope="col" style="width: 200px;">ФИО</th>
                       <th scope="col" style="width: 200px;">Организация</th>
-                      <th scope="col" style="width: 120px;">Статус</th>
-                      <th scope="col">Точка доступа</th>
+                      <th scope="col" style="width: 180px;">Первый вход</th>
+                      <th scope="col" style="width: 180px;">Последний вход</th>
+                      <th scope="col" style="width: 120px;">Всего посещений</th>
+                      <th scope="col" style="width: 120px;">Разрешено</th>
+                      <th scope="col" style="width: 120px;">Запрещено</th>
+                      <th scope="col" style="width: 100px; display: none;" id="actions-header">Действия</th>
                     </tr>
                   </thead>
-                  <tbody id="events-tbody">
+                  <tbody id="users-tbody">
                   </tbody>
                 </table>
               </div>
@@ -144,14 +132,13 @@
                   <span class="visually-hidden">Загрузка...</span>
                 </div>
               </div>
-
               <div id="no-more-data" class="text-center text-muted py-3" style="display: none;">
-                <small>Все события загружены</small>
+                <small>Все пользователи загружены</small>
               </div>
 
               <div id="no-data" class="text-center text-muted py-5" style="display: none;">
                 <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                <p class="mt-3 mb-0">События не найдены</p>
+                <p class="mt-3 mb-0">Пользователи не найдены</p>
               </div>
             </div>
           </div>
@@ -162,6 +149,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   <script src="js/auth-utils.js"></script>
-  <script src="js/statistics.js"></script>
+  <script src="js/visitors.js"></script>
 </body>
 </html>
