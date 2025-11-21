@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict
 class QRCodeCreateRequest(BaseModel):
     user_id: int
     organization_id: int
-    validity_hours: int = 1
 
 
 class QRCodeResponse(BaseModel):
