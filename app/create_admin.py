@@ -1,6 +1,8 @@
 import asyncio
+
 from sqlalchemy import select
-from app.database import engine, Base, async_session
+
+from app.database import Base, async_session, engine
 from app.models.staff import Staff, StaffRole
 from app.services.auth import get_password_hash
 

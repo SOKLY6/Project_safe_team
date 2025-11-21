@@ -1,12 +1,13 @@
 import logging
-from typing import Optional
-import httpx
 import os
+from typing import Optional
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+import httpx
+
+API_BASE_URL = os.getenv('API_BASE_URL', 'http://127.0.0.1:8000')
 logger = logging.getLogger(__name__)
 
-logger.info(f"🔧 API_BASE_URL: {API_BASE_URL}")
+logger.info(f'🔧 API_BASE_URL: {API_BASE_URL}')
 
 
 class APIClient:

@@ -25,6 +25,19 @@ jobs:
     - name: Install dependencies
       run: uv sync --all-extras
       
+    - name: Create .env for tests
+      run: |
+        cat > .env << 'EOF'
+        DEBUG_API=1
+        DB_FILE=./app/test.db
+        ALLOWED_ORIGINS=http://localhost:5173
+        BOT_TOKEN=so_secret
+        QR_LIFETIME_MINUTES=10000
+        JWT_TOKEN=secret
+        JWT_ALGORITHM=secret
+        ACCESS_TOKEN_EXPIRE_MINUTES=10000
+        EOF
+
     - name: Run linting with Ruff
       run: uv run ruff format .
       

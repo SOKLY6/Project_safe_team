@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, select
@@ -20,6 +20,7 @@ from app.services.qr_service import (
 )
 from app.services.scanner_service import verify_qr_code_fast
 from app.services.verification_service import verify_qr_code
+
 
 router = APIRouter(prefix='/qr', tags=['QR Codes'])
 
@@ -79,6 +80,12 @@ async def update_qr(
     qr_code.user_id = qr_data.user_id
     qr_code.organization_id = qr_data.organization_id
 
+    qr_code.expires_at = (
+        datetime.now(timezone.utc) + timedelta(minutes=1)
+    ).replace(tzinfo=None)
+
+    qr_code.used = False
+
     await db.commit()
     await db.refresh(qr_code)
 
@@ -103,7 +110,7 @@ async def get_active_qr_codes(
         .join(User, QRCode.user_id == User.id)
         .filter(
             QRCode.used.is_(False),
-            QRCode.expires_at > datetime.now().replace(tzinfo=None),
+            QRCode.expires_at > datetime.utcnow(),
         )
     )
 

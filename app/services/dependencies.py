@@ -31,7 +31,7 @@ async def get_current_staff(
             raise credentials_exception
         token_data = TokenData(username=username)
     except JWTError:
-        raise credentials_exception
+        raise credentials_exception from None
 
     result = await db.execute(
         select(Staff).where(Staff.username == token_data.username)
