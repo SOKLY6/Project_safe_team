@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import delete
 
-from app.database import async_session
+from app.utils.database import async_session
 from app.models.qr_code import QRCode
 
 

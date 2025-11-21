@@ -3,7 +3,7 @@ from enum import Enum
 from sqlalchemy import Column, Integer, String
 from sqlalchemy import Enum as SQLEnum
 
-from app.database import Base
+from app.utils.database import Base
 
 
 class StaffRole(str, Enum):

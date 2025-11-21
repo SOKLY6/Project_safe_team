@@ -10,4 +10,4 @@ COPY app ./app
 
 VOLUME ["/app/data"]
 
-CMD ["/bin/bash", "-c", "python3 -m app.create_admin && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["/bin/bash", "-c", "python3 -m app.utils.create_admin && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

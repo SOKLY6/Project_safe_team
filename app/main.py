@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.base import router as all_routers
-from app.database import Base, engine
+from app.utils.database import Base, engine
 
 
 @asynccontextmanager

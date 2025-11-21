@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.utils.database import get_db
 from app.models.access_log import AccessLog
 from app.models.qr_code import QRCode
 from app.models.user import User
