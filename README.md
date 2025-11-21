@@ -50,14 +50,14 @@ make setup
 ```
 
 ## Руководство по запуску (для деплоя сервера)
-Установите [зависимости для деплоя]()
+Установите [зависимости для деплоя](https://github.com/SOKLY6/Project_safe_team?tab=readme-ov-file#%D0%B7%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BB%D1%8F-%D0%B4%D0%B5%D0%BF%D0%BB%D0%BE%D1%8F)
 
 Склонируйте Github репозиторий командой, перейдите в папку проекта:
 ```bash
 git clone https://github.com/SOKLY6/Project_safe_team.git
 cd Project_safe_team
 ```
-Скопируйте шаблон файла [.env.example]() командой:
+Скопируйте шаблон файла [.env.example](https://github.com/SOKLY6/Project_safe_team/blob/main/.env.example) командой:
 ```bash
 cp .env.example .env
 ```
@@ -79,7 +79,7 @@ echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Установите [зависимости для разработчика]()
+Установите [зависимости для разработчика](https://github.com/SOKLY6/Project_safe_team?tab=readme-ov-file#%D0%B7%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8-%D0%B4%D0%BB%D1%8F-%D1%80%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B0)
 
 Активируйте виртуальное окружение
 ```bash
@@ -194,5 +194,5 @@ qr-access-system/
 ![ER.jpg](ER.jpg)
 
 ## Информация
-[Сервер uvicorn]() будет доступен по адресу: http://localhost:8000. 
-[Сайт]() будет доступен по адресу: http://localhost:8001/
+[Сервер uvicorn](https://github.com/SOKLY6/Project_safe_team?tab=readme-ov-file#%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-uvicorn) будет доступен по адресу: http://localhost:8000. 
+[Сайт](https://github.com/SOKLY6/Project_safe_team?tab=readme-ov-file#%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%B0%D0%B9%D1%82%D0%B0) будет доступен по адресу: http://localhost:8001/
