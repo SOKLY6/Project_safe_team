@@ -108,7 +108,6 @@ class APIClient:
                     json={
                         'user_id': user_id,
                         'organization_id': organization_id,
-                        'validity_hours': 24,
                     },
                 )
                 if response.status_code == 200:
