@@ -125,12 +125,10 @@
       items: [
         {
           method: 'POST',
-          path: '/qr/generate/{user_id}',
+          path: '/qr/generate',
           name: 'Сгенерировать QR код',
-          pathParams: [
-            { name: 'user_id', type: 'number', required: true, label: 'ID пользователя' }
-          ],
-          queryParams: [
+          fields: [
+            { name: 'user_id', type: 'number', required: true, label: 'ID пользователя' },
             { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
           ]
         },
@@ -204,8 +202,7 @@
           name: 'Зарегистрировать сотрудника',
           fields: [
             { name: 'username', type: 'text', required: true, label: 'Логин' },
-            { name: 'password', type: 'password', required: true, label: 'Пароль' },
-            { name: 'role', type: 'select', required: true, label: 'Роль', options: ['guard', 'admin'], defaultValue: 'guard' }
+            { name: 'password', type: 'password', required: true, label: 'Пароль' }
           ]
         },
         {
@@ -336,7 +333,18 @@
         const text = await res.text();
         let json;
         try { json = JSON.parse(text); } catch { json = text; }
-        resp.textContent = typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
+        
+        // Для успешных DELETE запросов показываем сообщение об успехе
+        if (res.ok && ep.method === 'DELETE') {
+          if (res.status === 204 || !text || text.trim() === '') {
+            resp.textContent = 'Успешно удалено';
+          } else {
+            resp.textContent = typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
+          }
+        } else {
+          resp.textContent = typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
+        }
+        
         resp.className = `response-area border rounded p-3 d-block ${res.ok ? 'bg-light border-success' : 'bg-light border-danger'}`;
         
       } catch (err) {
