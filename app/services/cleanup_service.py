@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import delete
 
-from app.utils.database import async_session
 from app.models.qr_code import QRCode
+from app.utils.database import async_session
 
 
 async def cleanup_expired_qr_codes():

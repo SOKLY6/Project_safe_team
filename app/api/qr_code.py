@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.utils.database import get_db
 from app.models.access_log import AccessLog
 from app.models.qr_code import QRCode
 from app.models.user import User
@@ -20,7 +19,7 @@ from app.services.qr_service import (
 )
 from app.services.scanner_service import verify_qr_code_fast
 from app.services.verification_service import verify_qr_code
-
+from app.utils.database import get_db
 
 router = APIRouter(prefix='/qr', tags=['QR Codes'])
 
