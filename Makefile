@@ -1,5 +1,10 @@
 PYTHON = python3
 
+.PHONY: setup
+setup:
+	curl -LsSf https://astral.sh/uv/install.sh | sh
+	uv sync
+
 .PHONY: lint
 lint:
 	@echo "Запуск ruff..."
