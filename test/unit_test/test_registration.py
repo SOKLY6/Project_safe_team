@@ -13,55 +13,55 @@ async def test_full_registration_and_qr_flow(client):
     """
 
     resp = await client.post(
-        "/organizations/",
-        json={"name": "Test Organization"},
+        '/organizations/',
+        json={'name': 'Test Organization'},
     )
     assert resp.status_code == 200
     org = resp.json()
-    org_id = org["id"]
+    org_id = org['id']
 
     resp = await client.post(
-        "/users/post",
+        '/users/post',
         json={
-            "telegram_id": 123456,
-            "name": "Test User",
-            "organization_id": org_id,
+            'telegram_id': 123456,
+            'name': 'Test User',
+            'organization_id': org_id,
         },
     )
     assert resp.status_code == 200
     user = resp.json()
-    user_id = user["id"]
+    user_id = user['id']
 
     resp = await client.post(
-        "/qr/generate",
+        '/qr/generate',
         json={
-            "user_id": user_id,
-            "organization_id": org_id,
+            'user_id': user_id,
+            'organization_id': org_id,
         },
     )
     assert resp.status_code == 200
     qr = resp.json()
-    qr_code = qr["code"]
+    qr_code = qr['code']
 
     resp = await client.post(
-        "/qr/verify",
+        '/qr/verify',
         json={
-            "qr_data": qr_code,
-            "scanner_id": "scanner-test-1",
+            'qr_data': qr_code,
+            'scanner_id': 'scanner-test-1',
         },
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "granted"
-    assert data["user_info"]["id"] == user_id
+    assert data['status'] == 'granted'
+    assert data['user_info']['id'] == user_id
 
     resp = await client.post(
-        "/qr/verify",
+        '/qr/verify',
         json={
-            "qr_data": "USER_999_TIMESTAMP_0_SECRET_deadbeefdeadbeef",
-            "scanner_id": "scanner-test-1",
+            'qr_data': 'USER_999_TIMESTAMP_0_SECRET_deadbeefdeadbeef',
+            'scanner_id': 'scanner-test-1',
         },
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] in ("invalid", "denied", "expired")
+    assert data['status'] in ('invalid', 'denied', 'expired')

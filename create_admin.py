@@ -3,7 +3,7 @@ import asyncio
 import bcrypt
 from sqlalchemy import select
 
-from app.database import get_db
+from app.utils.database import get_db
 from app.models.staff import Staff, StaffRole
 
 

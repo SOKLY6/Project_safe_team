@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.utils.database import get_db
 from app.models.staff import Staff, StaffRole
 from app.schemas.staff import TokenData
 from app.services.auth import ALGORITHM, SECRET_KEY
