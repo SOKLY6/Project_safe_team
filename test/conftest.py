@@ -4,10 +4,10 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.utils.database import Base, get_db
 from app.main import app
 from app.models.staff import Staff, StaffRole
 from app.services import dependencies
+from app.utils.database import Base, get_db
 
 
 @pytest.fixture(scope='session')

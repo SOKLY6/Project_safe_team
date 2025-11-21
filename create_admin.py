@@ -3,8 +3,8 @@ import asyncio
 import bcrypt
 from sqlalchemy import select
 
-from app.utils.database import get_db
 from app.models.staff import Staff, StaffRole
+from app.utils.database import get_db
 
 
 async def create_admin():

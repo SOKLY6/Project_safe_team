@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.utils.database import get_db
 from app.models.staff import Staff
 from app.schemas.staff import (
     StaffCreate,
@@ -19,6 +18,7 @@ from app.services.auth import (
     verify_password,
 )
 from app.services.dependencies import get_current_admin, get_current_staff
+from app.utils.database import get_db
 
 router = APIRouter(prefix='/auth', tags=['Authentication'])
 

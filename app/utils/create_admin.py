@@ -2,9 +2,9 @@ import asyncio
 
 from sqlalchemy import select
 
-from app.utils.database import Base, async_session, engine
 from app.models.staff import Staff, StaffRole
 from app.services.auth import get_password_hash
+from app.utils.database import Base, async_session, engine
 
 
 async def init_db():
