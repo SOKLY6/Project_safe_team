@@ -255,6 +255,8 @@
             errorMessage = 'Неверный формат QR-кода.';
           } else if (message.includes('rate limit')) {
             errorMessage = 'Превышен лимит запросов. Попробуйте позже.';
+          } else if (message.includes('access denied') || message.includes('доступ запрещён')) {
+            errorMessage = 'Доступ запрещён';
           } else {
             errorMessage = data.message;
           }

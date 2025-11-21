@@ -152,11 +152,11 @@ async def verify_qr_code(
             qr_code_id=qr_token.id,
             scanner_id=scanner_id,
             access_granted=False,
-            reason='Access denied: organization mismatch',
+            reason='Доступ запрещён: несоответствие организации',
         )
         return {
             'status': 'denied',
-            'message': 'Access denied',
+            'message': 'Доступ запрещён',
             'user_info': None,
         }
 
