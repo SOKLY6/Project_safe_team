@@ -180,5 +180,5 @@ qr-access-system/
 ![ER.jpg](ER.jpg)
 
 ## Информация
-[Сервер uvicorn]() будет доступен по адресу: http://localhost:8000/
+[Сервер uvicorn]() будет доступен по адресу: http://localhost:8000. 
 [Сайт]() будет доступен по адресу: http://localhost:8001/
