@@ -252,8 +252,6 @@
       return `
         <div class="card endpoint-card mb-3" id="card-${id}">
           <div class="endpoint-header card-header d-flex align-items-center gap-2">
-            <span class="badge method-badge method-${ep.method.toLowerCase()}">${ep.method}</span>
-            <code class="flex-grow-1">${ep.path}</code>
             <span>${ep.name}</span>
           </div>
           <div class="card-body">
@@ -334,15 +332,60 @@
         let json;
         try { json = JSON.parse(text); } catch { json = text; }
         
-        // Для успешных DELETE запросов показываем сообщение об успехе
+        // Функция для перевода стандартных сообщений об ошибках
+        const translateError = (errorObj) => {
+          const translations = {
+            'User with this telegram_id already exists': 'Пользователь с таким telegram_id уже существует',
+            'User not found': 'Пользователь не найден',
+            'Staff not found': 'Сотрудник не найден',
+            'Username already registered': 'Пользователь с таким именем уже зарегистрирован',
+            'Organization not found': 'Организация не найдена',
+            'Organization with this name already exists': 'Организация с таким названием уже существует',
+            'No active QR code found': 'Активный QR-код не найден',
+            'QR code not found': 'QR-код не найден',
+            'Invalid QR code format': 'Неверный формат QR-кода',
+            'Cannot delete yourself': 'Нельзя удалить самого себя',
+            'Access denied': 'Доступ запрещён',
+            'Not authenticated': 'Не авторизован',
+            'Invalid credentials': 'Неверные учетные данные'
+          };
+          
+          if (typeof errorObj === 'object' && errorObj.detail) {
+            return translations[errorObj.detail] || errorObj.detail;
+          }
+          
+          if (typeof errorObj === 'object' && errorObj.message) {
+            return translations[errorObj.message] || errorObj.message;
+          }
+          
+          return errorObj;
+        };
+        
+        // Функция для форматирования ответа
+        const formatResponse = (data, isOk) => {
+          if (typeof data === 'object' && data !== null) {
+            // Если это объект с одним полем detail, показываем только его значение
+            if (data.detail && Object.keys(data).length === 1) {
+              return translateError(data);
+            }
+            // Если это объект с полем message (особенно для ошибок), показываем только message
+            if (data.message && (data.status === 'invalid' || data.status === 'denied' || !isOk)) {
+              return translateError(data);
+            }
+            // Иначе показываем весь JSON
+            return JSON.stringify(data, null, 2);
+          }
+          return data;
+        };
+        
         if (res.ok && ep.method === 'DELETE') {
           if (res.status === 204 || !text || text.trim() === '') {
             resp.textContent = 'Успешно удалено';
           } else {
-            resp.textContent = typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
+            resp.textContent = formatResponse(json, res.ok);
           }
         } else {
-          resp.textContent = typeof json === 'object' ? JSON.stringify(json, null, 2) : json;
+          resp.textContent = formatResponse(json, res.ok);
         }
         
         resp.className = `response-area border rounded p-3 d-block ${res.ok ? 'bg-light border-success' : 'bg-light border-danger'}`;

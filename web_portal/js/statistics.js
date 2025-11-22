@@ -96,10 +96,10 @@
       
       allEvents = data.map(event => {
         return {
-          ...event,
-          scanner_name: event.scanner_id || 'Не указана',
-          user_name: event.user_name || 'Неизвестно',
-          organization_name: event.organization_name || 'Не указана'
+        ...event,
+        scanner_name: event.scanner_id || 'Не указана',
+        user_name: event.user_name || 'Неизвестно',
+        organization_name: event.organization_name || 'Не указана'
         };
       });
       

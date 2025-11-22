@@ -172,7 +172,7 @@
 
   async function checkQRCode(qrCode) {
     const normalizedQR = normalizeQRCode(qrCode);
-
+    
     try {
       const token = extractToken(normalizedQR);
 
