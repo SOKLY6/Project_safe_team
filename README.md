@@ -105,7 +105,8 @@ make runbot
 ```bash
 pytest
 ```
-
+# Архитектура проекта
+![arcitecture.png](images/architecture.png)
 # Структура проекта
 ```
 qr-access-system/
@@ -191,7 +192,7 @@ qr-access-system/
 
 ## Структура базы данных проекта
 
-![ER.jpg](ER.jpg)
+![ER.jpg](images/ER.jpg)
 
 ## Информация
 [Сервер uvicorn](https://github.com/SOKLY6/Project_safe_team?tab=readme-ov-file#%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA-%D1%81%D0%B5%D1%80%D0%B2%D0%B5%D1%80%D0%B0-uvicorn) будет доступен по адресу: http://localhost:8000. 
