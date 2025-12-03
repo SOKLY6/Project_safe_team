@@ -6,15 +6,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-<<<<<<< HEAD
-<<<<<<< HEAD
-from app.database import Base
-=======
-from app.database import DATABASE_URL, Base
->>>>>>> 2025beb (Fix ruff mistakes)
-=======
-from app.utils.database import DATABASE_URL, Base
->>>>>>> 5b6b776 ([refactor] replace create_admin, config, database to utils/)
+from app.utils.database import Base
 
 config = context.config
 
