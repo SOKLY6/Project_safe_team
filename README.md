@@ -106,7 +106,7 @@ make runbot
 pytest
 ```
 # Архитектура проекта
-![arcitecture.png](images/architecture.png)
+![](images/Untitled.jpg)
 # Структура проекта
 ```
 qr-access-system/
