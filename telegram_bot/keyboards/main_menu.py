@@ -11,7 +11,6 @@ def get_main_keyboard():
 
 def get_guest_keyboard():
     keyboard = [
-        [KeyboardButton('📝 Регистрация')],
-        [KeyboardButton('🆘 Помощь')],
+        [KeyboardButton('🔐 Вход')],
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)

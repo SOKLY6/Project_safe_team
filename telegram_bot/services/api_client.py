@@ -69,7 +69,11 @@ class APIClient:
             return None
 
     async def update_user(
-        self, user_id: int, name: str = None, organization_id: int = None
+        self,
+        user_id: int,
+        name: str = None,
+        organization_id: int = None,
+        telegram_id: int = None,
     ) -> bool:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -78,7 +82,8 @@ class APIClient:
                     data['name'] = name
                 if organization_id:
                     data['organization_id'] = organization_id
-
+                if telegram_id:
+                    data['telegram_id'] = telegram_id
                 response = await client.put(
                     f'{self.base_url}/users/{user_id}', json=data
                 )
@@ -86,6 +91,24 @@ class APIClient:
         except Exception as e:
             logger.error(f'Ошибка при обновлении пользователя: {e}')
             return False
+
+    async def login_user(self, username: str, password: str) -> Optional[dict]:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            r = await client.post(
+                f'{self.base_url}/users/login',
+                json={'username': username, 'password': password},
+            )
+            return r.json() if r.status_code == 200 else None
+
+    async def bind_telegram(
+        self, user_id: int, telegram_id: int
+    ) -> Optional[dict]:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            r = await client.put(
+                f'{self.base_url}/users/{user_id}/bind-telegram',
+                json={'telegram_id': telegram_id},
+            )
+            return r.json() if r.status_code == 200 else None
 
     async def get_organizations(self) -> list[dict]:
         try:

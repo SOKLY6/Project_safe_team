@@ -1,4 +1,4 @@
-from telegram import ReplyKeyboardMarkup, Update
+from telegram import Update
 from telegram.ext import (
     CommandHandler,
     ContextTypes,
@@ -13,17 +13,11 @@ from telegram_bot.keyboards.main_menu import (
 )
 from telegram_bot.services.api_client import api_client
 
-WAITING_FOR_NAME, WAITING_FOR_ORG = range(2)
-
-
-async def get_organizations_list():
-    orgs = await api_client.get_organizations()
-    return [org['name'] for org in orgs]
+WAITING_LOGIN, WAITING_PASSWORD = range(2)
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.effective_user.id
-
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
     if existing_user:
@@ -35,95 +29,73 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(
             '👋 Добро пожаловать в генератор QR-пропусков!\n\n'
-            '❌ Вы не зарегистрированы.\n'
-            'Нажмите "📝 Регистрация" для начала работы.',
+            '❌ Вы не авторизованы.\n'
+            'Нажмите "🔐 Вход" для авторизации.',
             reply_markup=get_guest_keyboard(),
         )
 
 
-async def start_registration(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def start_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.effective_user.id
-
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
     if existing_user:
         await update.message.reply_text(
-            f'✅ Вы уже зарегистрированы как {existing_user["name"]}',
+            f'✅ Вы уже авторизованы как {existing_user["name"]}',
             reply_markup=get_main_keyboard(),
         )
         return ConversationHandler.END
 
-    await update.message.reply_text(
-        '📝 Регистрация нового пользователя\n\nПожалуйста, введите ваше ФИО:'
-    )
-    return WAITING_FOR_NAME
+    await update.message.reply_text('🔐 Введите ваш логин:')
+    return WAITING_LOGIN
 
 
-async def save_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['name'] = update.message.text.strip()
+async def process_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['login'] = update.message.text.strip()
+    await update.message.reply_text('🔑 Введите пароль:')
+    return WAITING_PASSWORD
 
-    organizations = await get_organizations_list()
 
-    if not organizations:
+async def process_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    telegram_id = update.effective_user.id
+    username = context.user_data['login']
+    password = update.message.text
+
+    user = await api_client.login_user(username, password)
+    if not user:
         await update.message.reply_text(
-            '❌ В базе нет организаций.\nОбратитесь к администратору.',
+            '❌ Неверный логин или пароль.\nВведите логин заново:'
+        )
+        return WAITING_LOGIN
+
+    existing = await api_client.get_user_by_telegram_id(telegram_id)
+    if existing:
+        await update.message.reply_text(
+            '❌ Этот Telegram аккаунт уже привязан к пользователю.',
             reply_markup=get_guest_keyboard(),
         )
         return ConversationHandler.END
 
-    await update.message.reply_text(
-        '🏢 Выберите вашу организацию:',
-        reply_markup=ReplyKeyboardMarkup(
-            [[org] for org in organizations],
-            one_time_keyboard=True,
-            resize_keyboard=True,
-        ),
-    )
-    return WAITING_FOR_ORG
-
-
-async def save_organization_and_register(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
-    org_name = update.message.text
-    name = context.user_data.get('name')
-    telegram_id = update.effective_user.id
-
-    organizations = await api_client.get_organizations()
-    org = next((o for o in organizations if o['name'] == org_name), None)
-
-    if not org:
+    bound = await api_client.bind_telegram(user['id'], telegram_id)
+    if bound:
         await update.message.reply_text(
-            '❌ Пожалуйста, выберите организацию из списка!'
-        )
-        return WAITING_FOR_ORG
-
-    user = await api_client.register_user(telegram_id, name, org['id'])
-
-    if user:
-        await update.message.reply_text(
-            f'✅ Регистрация успешна!\n\n'
-            f'👤 Имя: {name}\n'
-            f'🏢 Организация: {org_name}\n\n'
+            f'✅ Авторизация успешна!\n\n'
+            f'👤 Имя: {user["name"]}\n\n'
             f'Теперь вы можете пользоваться всеми функциями бота!',
             reply_markup=get_main_keyboard(),
         )
-        return ConversationHandler.END
     else:
         await update.message.reply_text(
-            '❌ Ошибка регистрации.\nПопробуйте позже.',
+            '❌ Аккаунт уже привязан.\n',
             reply_markup=get_guest_keyboard(),
         )
-        return ConversationHandler.END
+
+    return ConversationHandler.END
 
 
-async def cancel_registration(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def cancel_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        'Регистрация отменена.',
+        'Авторизация отменена.',
         reply_markup=get_guest_keyboard(),
     )
     return ConversationHandler.END
@@ -132,22 +104,20 @@ async def cancel_registration(
 def setup_start_handlers(application):
     application.add_handler(CommandHandler('start', start_command))
 
-    registration_handler = ConversationHandler(
-        entry_points=[
-            MessageHandler(filters.Regex('📝 Регистрация'), start_registration)
-        ],
+    login_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex('🔐 Вход'), start_login)],
         states={
-            WAITING_FOR_NAME: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, save_name)
+            WAITING_LOGIN: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, process_login)
             ],
-            WAITING_FOR_ORG: [
+            WAITING_PASSWORD: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND,
-                    save_organization_and_register,
+                    process_password,
                 )
             ],
         },
-        fallbacks=[CommandHandler('cancel', cancel_registration)],
+        fallbacks=[CommandHandler('cancel', cancel_login)],
     )
 
-    application.add_handler(registration_handler)
+    application.add_handler(login_handler)
