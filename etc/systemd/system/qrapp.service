@@ -1,0 +1,14 @@
+[Unit]
+Description=QR Access API
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/PROJECT_SAFE_TEAM
+Environment=PATH=/home/ubuntu/PROJECT_SAFE_TEAM/.venv/bin
+ExecStart=/home/ubuntu/PROJECT_SAFE_TEAM/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
