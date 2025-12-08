@@ -5,13 +5,13 @@ from typing import Optional
 import httpx
 
 API_BASE_URL = os.getenv('API_BASE_URL', 'http://127.0.0.1:8000')
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 logger.info(f'🔧 API_BASE_URL: {API_BASE_URL}')
 
 
 class APIClient:
-    def __init__(self, base_url: str = API_BASE_URL):
+    def __init__(self, base_url: str = API_BASE_URL) -> None:
         self.base_url = base_url
         self.timeout = httpx.Timeout(10.0, connect=5.0)
 
@@ -23,13 +23,15 @@ class APIClient:
                 response = await client.get(
                     f'{self.base_url}/users/by-telegram/{telegram_id}'
                 )
-                if response.status_code == 200:
-                    return response.json()
-                elif response.status_code == 404:
-                    return None
-                else:
-                    logger.error(f'Неожиданный статус {response.status_code}')
-                    return None
+
+            if response.status_code == 200:
+                return response.json()
+            if response.status_code == 404:
+                return None
+
+            logger.error(f'Неожиданный статус {response.status_code}')
+            return None
+
         except httpx.TimeoutException:
             logger.error(f'Timeout при запросе пользователя {telegram_id}')
             return None
@@ -38,12 +40,15 @@ class APIClient:
                 'API не доступен. Проверьте, запущен ли FastAPI сервер'
             )
             return None
-        except Exception as e:
-            logger.error(f'Ошибка при запросе пользователя: {e}')
+        except Exception as exc:
+            logger.error(f'Ошибка при запросе пользователя: {exc}')
             return None
 
     async def register_user(
-        self, telegram_id: int, name: str, organization_id: int
+        self,
+        telegram_id: int,
+        name: str,
+        organization_id: int,
     ) -> Optional[dict]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -55,17 +60,19 @@ class APIClient:
                         'organization_id': organization_id,
                     },
                 )
-                if response.status_code == 200:
-                    return response.json()
-                return None
+
+            if response.status_code == 200:
+                return response.json()
+            return None
+
         except httpx.TimeoutException:
             logger.error('Timeout при регистрации пользователя')
             return None
         except httpx.ConnectError:
             logger.error('API не доступен')
             return None
-        except Exception as e:
-            logger.error(f'Ошибка при регистрации: {e}')
+        except Exception as exc:
+            logger.error(f'Ошибка при регистрации: {exc}')
             return None
 
     async def update_user(
@@ -85,11 +92,13 @@ class APIClient:
                 if telegram_id:
                     data['telegram_id'] = telegram_id
                 response = await client.put(
-                    f'{self.base_url}/users/{user_id}', json=data
+                    f'{self.base_url}/users/{user_id}',
+                    json=data,
                 )
-                return response.status_code == 200
-        except Exception as e:
-            logger.error(f'Ошибка при обновлении пользователя: {e}')
+
+            return response.status_code == 200
+        except Exception as exc:
+            logger.error(f'Ошибка при обновлении пользователя: {exc}')
             return False
 
     async def login_user(self, username: str, password: str) -> Optional[dict]:
@@ -110,19 +119,23 @@ class APIClient:
             )
             return r.json() if r.status_code == 200 else None
 
-    async def get_organizations(self) -> list[dict]:
+    async def get_organization(self, organization_id: int) -> Optional[dict]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(f'{self.base_url}/organizations/')
+                response = await client.get(
+                    f'{self.base_url}/organizations/{organization_id}'
+                )
                 if response.status_code == 200:
                     return response.json()
-                return []
+                return None
         except Exception as e:
-            logger.error(f'Ошибка при получении организаций: {e}')
-            return []
+            logger.error(f'Ошибка при получении организации: {e}')
+            return None
 
     async def generate_qr_code(
-        self, user_id: int, organization_id: int
+        self,
+        user_id: int,
+        organization_id: int,
     ) -> Optional[dict]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -133,11 +146,12 @@ class APIClient:
                         'organization_id': organization_id,
                     },
                 )
-                if response.status_code == 200:
-                    return response.json()
-                return None
-        except Exception as e:
-            logger.error(f'Ошибка при генерации QR: {e}')
+
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as exc:
+            logger.error(f'Ошибка при генерации QR: {exc}')
             return None
 
     async def get_user_qr_codes(self, user_id: int) -> list[dict]:
@@ -146,11 +160,12 @@ class APIClient:
                 response = await client.get(
                     f'{self.base_url}/qr/user/{user_id}'
                 )
-                if response.status_code == 200:
-                    return response.json()
-                return []
-        except Exception as e:
-            logger.error(f'Ошибка при получении QR кодов: {e}')
+
+            if response.status_code == 200:
+                return response.json()
+            return []
+        except Exception as exc:
+            logger.error(f'Ошибка при получении QR кодов: {exc}')
             return []
 
 

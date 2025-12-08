@@ -1,5 +1,6 @@
 from telegram import Update
 from telegram.ext import (
+    Application,
     CommandHandler,
     ContextTypes,
     ConversationHandler,
@@ -16,10 +17,14 @@ from telegram_bot.services.api_client import api_client
 WAITING_LOGIN, WAITING_PASSWORD = range(2)
 
 
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
     telegram_id = update.effective_user.id
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
+    assert update.message is not None
     if existing_user:
         await update.message.reply_text(
             f'✅ Добро пожаловать, {existing_user["name"]}!\n'
@@ -39,6 +44,7 @@ async def start_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.effective_user.id
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
+    assert update.message is not None
     if existing_user:
         await update.message.reply_text(
             f'✅ Вы уже авторизованы как {existing_user["name"]}',
@@ -101,7 +107,19 @@ async def cancel_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-def setup_start_handlers(application):
+async def cancel_registration(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> int:
+    assert update.message is not None
+    await update.message.reply_text(
+        'Регистрация отменена.',
+        reply_markup=get_guest_keyboard(),
+    )
+    return ConversationHandler.END
+
+
+def setup_start_handlers(application: Application) -> None:
     application.add_handler(CommandHandler('start', start_command))
 
     login_handler = ConversationHandler(
