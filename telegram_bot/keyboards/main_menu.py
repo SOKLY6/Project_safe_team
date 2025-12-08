@@ -1,15 +1,4 @@
-class KeyboardButton:
-    def __init__(self, text: str) -> None:
-        pass
-
-
-class ReplyKeyboardMarkup:
-    def __init__(
-        self,
-        keyboard: list[list[KeyboardButton]],
-        resize_keyboard: bool = False,
-    ) -> None:
-        pass
+from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 
 def get_main_keyboard() -> ReplyKeyboardMarkup:

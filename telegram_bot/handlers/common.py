@@ -2,12 +2,12 @@ import io
 from typing import Any
 
 import qrcode
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
     MessageHandler,
-    Update,
     filters,
 )
 
