@@ -35,11 +35,11 @@ services:
     build:
       context: ./web_portal
     ports:
-      - "8001:8001"
+      - "80:80"
     depends_on:
       - app
-    volumes:
-      - app_data:/usr/src/app/data
+    environment:
+      - API_BASE_URL=http://app:8000
 
 
 volumes:

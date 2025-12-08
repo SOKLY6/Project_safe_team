@@ -1,0 +1,248 @@
+@import '../css/style.css';
+@import '../css/api.css';
+@import '../css/qr-result.css';
+
+button.btn,
+a.btn,
+input.btn[type="button"],
+input.btn[type="submit"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+  opacity: 1 !important;
+}
+
+button.btn-primary,
+a.btn-primary,
+input.btn-primary[type="button"],
+input.btn-primary[type="submit"] {
+  background-color: #3b82f6 !important;
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  border: 1px solid #3b82f6 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-primary:hover,
+a.btn-primary:hover,
+input.btn-primary[type="button"]:hover,
+input.btn-primary[type="submit"]:hover {
+  background-color: #2563eb !important;
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  border: 1px solid #2563eb !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-primary:active,
+a.btn-primary:active,
+input.btn-primary[type="button"]:active,
+input.btn-primary[type="submit"]:active,
+button.btn-primary:focus,
+a.btn-primary:focus,
+input.btn-primary[type="button"]:focus,
+input.btn-primary[type="submit"]:focus {
+  background-color: #1d4ed8 !important;
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  border: 1px solid #1d4ed8 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-outline-primary,
+a.btn-outline-primary {
+  background-color: transparent !important;
+  background: transparent !important;
+  border-color: #3b82f6 !important;
+  border: 1px solid #3b82f6 !important;
+  color: #3b82f6 !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-outline-primary:hover,
+a.btn-outline-primary:hover {
+  background-color: #3b82f6 !important;
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-outline-secondary,
+a.btn-outline-secondary {
+  background-color: transparent !important;
+  background: transparent !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  border: 1px solid rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-outline-secondary:hover,
+a.btn-outline-secondary:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-outline-success,
+a.btn-outline-success {
+  background-color: transparent !important;
+  background: transparent !important;
+  border-color: #10b981 !important;
+  border: 1px solid #10b981 !important;
+  color: #10b981 !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+button.btn-outline-success:hover,
+a.btn-outline-success:hover {
+  background-color: #10b981 !important;
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+/* Стили для заблокированных кнопок */
+button.btn:disabled,
+button.btn[disabled],
+input.btn[type="button"]:disabled,
+input.btn[type="submit"]:disabled {
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+button.btn-outline-secondary:disabled,
+button.btn-outline-secondary[disabled] {
+  opacity: 0.65 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  background-color: transparent !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  color: #0f172a !important;
+}
+
+.navbar .nav-link.active,
+.navbar .nav-link[aria-current="page"],
+.navbar .nav-item .nav-link.active,
+.navbar-nav .nav-link.active {
+  font-weight: 600 !important;
+  color: #000000 !important;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Улучшенный navbar */
+.navbar {
+  background: #ffffff !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-link {
+  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px !important;
+  margin: 0 4px;
+}
+
+.nav-link:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary) !important;
+}
+
+.nav-link.active {
+  background: var(--gradient-primary) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+/* Улучшенные заголовки */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-fg);
+}
+
+h1 {
+  font-size: 2.5rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Переопределение для заголовка на странице входа */
+.login-title {
+  color: #ffffff !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background-clip: unset !important;
+}
+
+/* Подсветка навигации при наведении */
+.nav-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  transform: translateX(-50%);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::before {
+  width: 80%;
+}
+
+.nav-link.active::before {
+  width: 100%;
+}
+

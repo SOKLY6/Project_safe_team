@@ -7,10 +7,13 @@ __pycache__/
 *.so
 
 # Database
-test.db
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3-journal
 
-# Migarations
-app/alembic/versions
+# Migrations (комментируем - миграции должны быть в репозитории)
+# app/alembic/versions
 
 
 # Distribution / packaging
