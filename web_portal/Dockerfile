@@ -1,9 +1,20 @@
-FROM python:3.12-slim
+# Build stage
+FROM node:18-alpine as build
 
-WORKDIR /web_portal
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm install
 
 COPY . .
+RUN npm run build
 
-EXPOSE 8001
+FROM nginx:alpine
 
-CMD ["python3", "-m", "http.server", "8001", "--bind", "0.0.0.0"]
+COPY --from=build /app/dist /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
