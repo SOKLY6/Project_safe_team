@@ -27,7 +27,6 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
 async def register(
     staff_data: StaffCreate,
     db: AsyncSession = Depends(get_db),
-    current_admin: Staff = Depends(get_current_admin),
 ):
     result = await db.execute(
         select(Staff).where(Staff.username == staff_data.username)

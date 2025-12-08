@@ -1,10 +1,12 @@
-from telegram import Update
+from typing import Any
+
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
     ConversationHandler,
     MessageHandler,
+    Update,
     filters,
 )
 
@@ -21,6 +23,8 @@ async def start_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
+    if update.effective_user is None:
+        return
     telegram_id = update.effective_user.id
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
@@ -40,7 +44,11 @@ async def start_command(
         )
 
 
-async def start_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start_login(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    if update.effective_user is None:
+        return ConversationHandler.END
     telegram_id = update.effective_user.id
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
@@ -56,18 +64,38 @@ async def start_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return WAITING_LOGIN
 
 
-async def process_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['login'] = update.message.text.strip()
+async def process_login(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    assert update.message is not None
+    assert update.message.text is not None
+    if context.user_data is not None:
+        context.user_data['login'] = update.message.text.strip()
     await update.message.reply_text('🔑 Введите пароль:')
     return WAITING_PASSWORD
 
 
-async def process_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def process_password(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    assert update.message is not None
+    assert update.message.text is not None
+    if update.effective_user is None:
+        return ConversationHandler.END
     telegram_id = update.effective_user.id
-    username = context.user_data['login']
+
+    username: Any = None
+    if context.user_data is not None:
+        username = context.user_data.get('login')
+
     password = update.message.text
 
+    if not username or not isinstance(username, str):
+        await update.message.reply_text('❌ Ошибка: логин не указан.')
+        return ConversationHandler.END
+
     user = await api_client.login_user(username, password)
+
     if not user:
         await update.message.reply_text(
             '❌ Неверный логин или пароль.\nВведите логин заново:'
@@ -99,7 +127,10 @@ async def process_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def cancel_login(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cancel_login(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    assert update.message is not None
     await update.message.reply_text(
         'Авторизация отменена.',
         reply_markup=get_guest_keyboard(),
@@ -121,7 +152,6 @@ async def cancel_registration(
 
 def setup_start_handlers(application: Application) -> None:
     application.add_handler(CommandHandler('start', start_command))
-
     login_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex('🔐 Вход'), start_login)],
         states={
@@ -137,5 +167,4 @@ def setup_start_handlers(application: Application) -> None:
         },
         fallbacks=[CommandHandler('cancel', cancel_login)],
     )
-
     application.add_handler(login_handler)

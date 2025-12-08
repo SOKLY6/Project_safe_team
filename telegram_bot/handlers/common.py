@@ -1,12 +1,13 @@
 import io
+from typing import Any
 
 import qrcode
-from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
     MessageHandler,
+    Update,
     filters,
 )
 
@@ -36,6 +37,8 @@ async def show_stats(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
+    if update.effective_user is None:
+        return
     telegram_id = update.effective_user.id
     user = await api_client.get_user_by_telegram_id(telegram_id)
 
@@ -48,7 +51,7 @@ async def show_stats(
         return
 
     org_name = 'Не указана'
-    org_id = user.get('organization_id')
+    org_id: Any = user.get('organization_id')
     if org_id is not None:
         org = await api_client.get_organization(org_id)
         if org:
@@ -71,6 +74,8 @@ async def qr_generation(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
+    if update.effective_user is None:
+        return
     telegram_id = update.effective_user.id
     user = await api_client.get_user_by_telegram_id(telegram_id)
 
@@ -83,9 +88,10 @@ async def qr_generation(
         )
         return
 
+    org_id_val: Any = user.get('organization_id', 1)
     qr_data = await api_client.generate_qr_code(
         user['id'],
-        user.get('organization_id', 1),
+        org_id_val,
     )
 
     if not qr_data:
@@ -111,6 +117,8 @@ async def profile(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
+    if update.effective_user is None:
+        return
     telegram_id = update.effective_user.id
     user = await api_client.get_user_by_telegram_id(telegram_id)
 
@@ -123,7 +131,7 @@ async def profile(
         return
 
     org_name = 'Не указана'
-    org_id = user.get('organization_id')
+    org_id: Any = user.get('organization_id')
     if org_id is not None:
         org = await api_client.get_organization(org_id)
         if org:

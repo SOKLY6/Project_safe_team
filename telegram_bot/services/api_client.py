@@ -1,13 +1,12 @@
 import logging
-import os
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
+from decouple import config
 
-API_BASE_URL = os.getenv('API_BASE_URL', 'http://127.0.0.1:8000')
-
+API_BASE_URL = config('API_BASE_URL', default='http://127.0.0.1:8000')
 logger = logging.getLogger(__name__)
-logger.info(f'🔧 API_BASE_URL: {API_BASE_URL}')
+logger.info(f'API_BASE_URL: {API_BASE_URL}')
 
 
 class APIClient:
@@ -17,21 +16,18 @@ class APIClient:
 
     async def get_user_by_telegram_id(
         self, telegram_id: int
-    ) -> Optional[dict]:
+    ) -> Optional[dict[str, Any]]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(
                     f'{self.base_url}/users/by-telegram/{telegram_id}'
                 )
-
-            if response.status_code == 200:
-                return response.json()
-            if response.status_code == 404:
+                if response.status_code == 200:
+                    return response.json()
+                if response.status_code == 404:
+                    return None
+                logger.error(f'Неожиданный статус {response.status_code}')
                 return None
-
-            logger.error(f'Неожиданный статус {response.status_code}')
-            return None
-
         except httpx.TimeoutException:
             logger.error(f'Timeout при запросе пользователя {telegram_id}')
             return None
@@ -49,7 +45,7 @@ class APIClient:
         telegram_id: int,
         name: str,
         organization_id: int,
-    ) -> Optional[dict]:
+    ) -> Optional[dict[str, Any]]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -60,11 +56,9 @@ class APIClient:
                         'organization_id': organization_id,
                     },
                 )
-
-            if response.status_code == 200:
-                return response.json()
-            return None
-
+                if response.status_code == 200:
+                    return response.json()
+                return None
         except httpx.TimeoutException:
             logger.error('Timeout при регистрации пользователя')
             return None
@@ -78,30 +72,31 @@ class APIClient:
     async def update_user(
         self,
         user_id: int,
-        name: str = None,
-        organization_id: int = None,
-        telegram_id: int = None,
+        name: Optional[str] = None,
+        organization_id: Optional[int] = None,
+        telegram_id: Optional[int] = None,
     ) -> bool:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                data = {}
-                if name:
+                data: dict[str, str | int] = {}
+                if name is not None:
                     data['name'] = name
-                if organization_id:
+                if organization_id is not None:
                     data['organization_id'] = organization_id
-                if telegram_id:
+                if telegram_id is not None:
                     data['telegram_id'] = telegram_id
                 response = await client.put(
                     f'{self.base_url}/users/{user_id}',
                     json=data,
                 )
-
-            return response.status_code == 200
+                return response.status_code == 200
         except Exception as exc:
             logger.error(f'Ошибка при обновлении пользователя: {exc}')
             return False
 
-    async def login_user(self, username: str, password: str) -> Optional[dict]:
+    async def login_user(
+        self, username: str, password: str
+    ) -> Optional[dict[str, Any]]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             r = await client.post(
                 f'{self.base_url}/users/login',
@@ -111,7 +106,7 @@ class APIClient:
 
     async def bind_telegram(
         self, user_id: int, telegram_id: int
-    ) -> Optional[dict]:
+    ) -> Optional[dict[str, Any]]:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             r = await client.put(
                 f'{self.base_url}/users/{user_id}/bind-telegram',
@@ -119,7 +114,9 @@ class APIClient:
             )
             return r.json() if r.status_code == 200 else None
 
-    async def get_organization(self, organization_id: int) -> Optional[dict]:
+    async def get_organization(
+        self, organization_id: int
+    ) -> Optional[dict[str, Any]]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(
@@ -136,7 +133,7 @@ class APIClient:
         self,
         user_id: int,
         organization_id: int,
-    ) -> Optional[dict]:
+    ) -> Optional[dict[str, Any]]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
@@ -146,24 +143,22 @@ class APIClient:
                         'organization_id': organization_id,
                     },
                 )
-
-            if response.status_code == 200:
-                return response.json()
-            return None
+                if response.status_code == 200:
+                    return response.json()
+                return None
         except Exception as exc:
             logger.error(f'Ошибка при генерации QR: {exc}')
             return None
 
-    async def get_user_qr_codes(self, user_id: int) -> list[dict]:
+    async def get_user_qr_codes(self, user_id: int) -> list[dict[str, Any]]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(
                     f'{self.base_url}/qr/user/{user_id}'
                 )
-
-            if response.status_code == 200:
-                return response.json()
-            return []
+                if response.status_code == 200:
+                    return response.json()
+                return []
         except Exception as exc:
             logger.error(f'Ошибка при получении QR кодов: {exc}')
             return []
