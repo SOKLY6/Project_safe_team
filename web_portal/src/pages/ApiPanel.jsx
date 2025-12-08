@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 
-const API_BASE_URL = `http://${window.location.hostname}:8000`;
+const API_BASE_URL = import.meta.env.DEV
+  ? `http://${window.location.hostname}:8000`
+  : `${window.location.protocol}//${window.location.host}/api`;
 const TOKEN_KEY = 'auth_token';
 
 const endpoints = [
