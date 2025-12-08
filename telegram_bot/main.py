@@ -1,20 +1,19 @@
 from decouple import config
-from telegram.ext import Application
+from telegram.ext import Application  # type: ignore[attr-defined]
 
 from telegram_bot.handlers.common import setup_common_handlers
 from telegram_bot.handlers.start import setup_start_handlers
 from telegram_bot.services.utils import setup_logging
 
 
-def main():
+def main() -> None:
     setup_logging()
 
-    BOT_TOKEN = config('BOT_TOKEN')
-
-    if not BOT_TOKEN:
+    bot_token = config('BOT_TOKEN')
+    if not bot_token:
         raise ValueError('BOT_TOKEN не найден. Проверьте файл .env')
 
-    application = Application.builder().token(BOT_TOKEN).build()
+    application = Application.builder().token(bot_token).build()
 
     setup_start_handlers(application)
     setup_common_handlers(application)
