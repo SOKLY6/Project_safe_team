@@ -138,6 +138,14 @@ const endpoints = [
       },
       {
         method: 'GET',
+        path: '/qr/user/{user_id}',
+        name: 'Получить QR коды пользователя',
+        pathParams: [
+          { name: 'user_id', type: 'number', required: true, label: 'ID пользователя' }
+        ]
+      },
+      {
+        method: 'GET',
         path: '/qr/active/{user_id}',
         name: 'Получить активный QR код пользователя',
         pathParams: [
@@ -166,11 +174,20 @@ const endpoints = [
         ]
       },
       {
+        method: 'POST',
+        path: '/qr/scanner/verify',
+        name: 'Проверить QR код (scanner)',
+        fields: [
+          { name: 'qr_data', type: 'text', required: true, label: 'QR данные' },
+          { name: 'scanner_id', type: 'text', required: true, label: 'ID сканера' }
+        ]
+      },
+      {
         method: 'GET',
         path: '/qr/active',
         name: 'Получить активные QR коды',
         queryParams: [
-          { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
+          { name: 'organization_id', type: 'number', required: false, label: 'ID организации (опционально)' }
         ]
       },
       {
