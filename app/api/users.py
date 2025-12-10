@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import user as models
@@ -8,6 +8,19 @@ from app.services.auth import get_password_hash, verify_password
 from app.utils.database import get_db
 
 router = APIRouter(prefix='/users', tags=['Users'])
+
+
+@router.get('/', response_model=list[schemas.UserResponse])
+async def get_all_users(
+    skip: int = Query(0, ge=0, description='Количество записей для пропуска'),
+    limit: int = Query(
+        100, ge=1, le=1000, description='Максимальное количество записей'
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> list[schemas.UserResponse]:
+    result = await db.execute(select(models.User).offset(skip).limit(limit))
+    users = result.scalars().all()
+    return list(users)
 
 
 @router.put('/{user_id}/bind-telegram', response_model=schemas.UserResponse)
@@ -142,6 +155,11 @@ async def delete_user(
 
     await db.delete(db_user)
     await db.commit()
+
+    result = await db.execute(select(models.User))
+    if not result.scalars().first():
+        await db.execute(text('ALTER SEQUENCE users_id_seq RESTART WITH 1'))
+        await db.commit()
 
 
 @router.delete(
