@@ -13,10 +13,11 @@ const endpoints = [
     items: [
       {
         method: 'POST',
-        path: '/users/post',
+        path: '/users/register',
         name: 'Создать пользователя',
         fields: [
-          { name: 'telegram_id', type: 'number', required: true, label: 'Telegram ID' },
+          { name: 'username', type: 'text', required: true, label: 'Логин' },
+          { name: 'password', type: 'password', required: true, label: 'Пароль' },
           { name: 'name', type: 'text', required: true, label: 'Имя' },
           { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
         ]
@@ -46,7 +47,8 @@ const endpoints = [
         ],
         fields: [
           { name: 'name', type: 'text', required: true, label: 'Имя' },
-          { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
+          { name: 'organization_id', type: 'number', required: true, label: 'ID организации' },
+          { name: 'telegram_id', type: 'number', required: true, label: 'Telegram ID' }
         ]
       },
       {
@@ -59,6 +61,17 @@ const endpoints = [
         fields: [
           { name: 'name', type: 'text', required: true, label: 'Имя' },
           { name: 'organization_id', type: 'number', required: true, label: 'ID организации' }
+        ]
+      },
+      {
+        method: 'PUT',
+        path: '/users/{user_id}/bind-telegram',
+        name: 'Привязать Telegram к пользователю',
+        pathParams: [
+          { name: 'user_id', type: 'number', required: true, label: 'ID пользователя' }
+        ],
+        fields: [
+          { name: 'telegram_id', type: 'number', required: true, label: 'Telegram ID' }
         ]
       },
       {
@@ -138,6 +151,14 @@ const endpoints = [
       },
       {
         method: 'GET',
+        path: '/qr/user/{user_id}',
+        name: 'Получить QR коды пользователя',
+        pathParams: [
+          { name: 'user_id', type: 'number', required: true, label: 'ID пользователя' }
+        ]
+      },
+      {
+        method: 'GET',
         path: '/qr/active/{user_id}',
         name: 'Получить активный QR код пользователя',
         pathParams: [
@@ -160,6 +181,15 @@ const endpoints = [
         method: 'POST',
         path: '/qr/verify',
         name: 'Проверить QR код',
+        fields: [
+          { name: 'qr_data', type: 'text', required: true, label: 'QR данные' },
+          { name: 'scanner_id', type: 'text', required: true, label: 'ID сканера' }
+        ]
+      },
+      {
+        method: 'POST',
+        path: '/qr/scanner/verify',
+        name: 'Проверить QR код (быстрая проверка)',
         fields: [
           { name: 'qr_data', type: 'text', required: true, label: 'QR данные' },
           { name: 'scanner_id', type: 'text', required: true, label: 'ID сканера' }
@@ -200,6 +230,15 @@ const endpoints = [
   {
     category: 'Аутентификация',
     items: [
+      {
+        method: 'POST',
+        path: '/auth/login',
+        name: 'Войти (получить токен)',
+        fields: [
+          { name: 'username', type: 'text', required: true, label: 'Логин' },
+          { name: 'password', type: 'password', required: true, label: 'Пароль' }
+        ]
+      },
       {
         method: 'POST',
         path: '/auth/register',
