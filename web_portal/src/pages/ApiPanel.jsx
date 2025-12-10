@@ -48,7 +48,7 @@ const endpoints = [
         fields: [
           { name: 'name', type: 'text', required: true, label: 'Имя' },
           { name: 'organization_id', type: 'number', required: true, label: 'ID организации' },
-          { name: 'telegram_id', type: 'number', required: true, label: 'Telegram ID' }
+          { name: 'telegram_id', type: 'number', required: false, label: 'Telegram ID (опционально)' }
         ]
       },
       {
@@ -432,16 +432,17 @@ const ApiPanel = () => {
       <div className="mb-3">
         {params.map((p, idx) => {
           const inputId = `${prefix}-${id}-${p.name}`;
+          const isRequired = p.required !== false; // По умолчанию required = true, если не указано иное
           return (
             <div key={idx} className="form-group mb-2">
               <label className="form-label" htmlFor={inputId}>
-                {p.label} <span className="text-danger">*</span>
+                {p.label} {isRequired && <span className="text-danger">*</span>}
               </label>
               <input
                 type={p.type === 'number' ? 'number' : p.type}
                 className="form-control"
                 id={inputId}
-                required
+                required={isRequired}
                 value={formData[inputId] || (p.defaultValue || '')}
                 onChange={(e) => setFormData({ ...formData, [inputId]: e.target.value })}
               />
