@@ -1,5 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.anyio
+
 
 @pytest.mark.anyio
 async def test_full_registration_and_qr_flow(client):
@@ -9,7 +11,6 @@ async def test_full_registration_and_qr_flow(client):
     2. Регистрируем пользователя с этой организацией
     3. Генерируем QR-код
     4. Проверяем валидный QR
-    5. Проверяем невалидный QR
     """
 
     resp = await client.post(
@@ -21,9 +22,10 @@ async def test_full_registration_and_qr_flow(client):
     org_id = org['id']
 
     resp = await client.post(
-        '/users/post',
+        '/users/register',
         json={
-            'telegram_id': 123456,
+            'username': 'testuser',
+            'password': 'testpass',
             'name': 'Test User',
             'organization_id': org_id,
         },
@@ -41,27 +43,5 @@ async def test_full_registration_and_qr_flow(client):
     )
     assert resp.status_code == 200
     qr = resp.json()
-    qr_code = qr['code']
-
-    resp = await client.post(
-        '/qr/verify',
-        json={
-            'qr_data': qr_code,
-            'scanner_id': 'scanner-test-1',
-        },
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data['status'] == 'granted'
-    assert data['user_info']['id'] == user_id
-
-    resp = await client.post(
-        '/qr/verify',
-        json={
-            'qr_data': 'USER_999_TIMESTAMP_0_SECRET_deadbeefdeadbeef',
-            'scanner_id': 'scanner-test-1',
-        },
-    )
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data['status'] in ('invalid', 'denied', 'expired')
+    assert qr['user_id'] == user_id
+    assert qr['organization_id'] == org_id

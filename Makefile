@@ -12,6 +12,9 @@ lint:
 	@echo "Запуск ruff check --fix..."
 	ruff check --fix
 	ruff check .
+	@echo "Запуск mypy..."
+	mypy telegram_bot/
+	mypy app/
 
 .PHONY: runserver
 runserver:

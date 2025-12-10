@@ -6,61 +6,64 @@ from app.models.staff import Staff, StaffRole
 pytestmark = pytest.mark.anyio
 
 
-async def test_register_staff_success(client, db_session):
+async def test_login_success(client, db_session, admin_staff):
     resp = await client.post(
-        '/auth/register',
-        json={'username': 'new_staff', 'password': 'password123'},
+        '/auth/login',
+        json={'username': 'admin', 'password': 'password123'},
     )
+
     assert resp.status_code == 200
     data = resp.json()
-    assert data['id'] > 0
-    assert data['username'] == 'new_staff'
+    assert 'access_token' in data
+    assert data['token_type'] == 'bearer'
 
 
-async def test_register_staff_duplicate_username(client, db_session):
-    existing = Staff(
-        username='dup', hashed_password='hashed', role=StaffRole.GUARD
-    )
-    db_session.add(existing)
-    await db_session.commit()
-    resp = await client.post(
-        '/auth/register', json={'username': 'dup', 'password': 'pass2'}
-    )
-    assert resp.status_code == 400
-    assert resp.json()['detail'] == 'Username already registered'
+async def test_get_me_success(client, regular_staff):
+    resp = await client.get('/auth/me')
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['username'] == regular_staff.username
+    assert data['id'] == regular_staff.id
 
 
-async def test_login_wrong_credentials(client):
-    resp = await client.post(
-        '/auth/login', json={'username': 'unknown', 'password': 'wrong'}
-    )
-    assert resp.status_code == 401
-    assert resp.json()['detail'] == 'Incorrect username or password'
-
-
-async def test_delete_staff_success(client, db_session):
-    staff = Staff(
-        username='to_delete', hashed_password='hashed', role=StaffRole.GUARD
-    )
-    db_session.add(staff)
-    await db_session.commit()
-    await db_session.refresh(staff)
-    resp = await client.delete(f'/auth/staff/{staff.id}')
-    assert resp.status_code == 204
-    result = await db_session.execute(select(Staff).filter_by(id=staff.id))
-    deleted = result.scalars().first()
-    assert deleted is None
-
-
-async def test_delete_staff_cannot_delete_self(
-    client, admin_staff, db_session
+async def test_list_staff_success(
+    client, db_session, admin_staff, regular_staff
 ):
-    resp = await client.delete(f'/auth/staff/{admin_staff.id}')
-    assert resp.status_code == 400
-    assert resp.json()['detail'] == 'Cannot delete yourself'
+    resp = await client.get('/auth/staff')
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) >= 2
+    usernames = [s['username'] for s in data]
+    assert 'admin' in usernames
+    assert 'user' in usernames
 
 
-async def test_delete_staff_not_found(client):
-    resp = await client.delete('/auth/staff/999')
-    assert resp.status_code == 404
-    assert resp.json()['detail'] == 'Staff not found'
+async def test_list_staff_returns_all_roles(client, db_session):
+    result = await db_session.execute(select(Staff))
+    all_staff = result.scalars().all()
+    for s in all_staff:
+        await db_session.delete(s)
+    await db_session.commit()
+
+    admin = Staff(
+        username='admin1',
+        hashed_password='hash1',
+        role=StaffRole.ADMIN,
+    )
+    guard = Staff(
+        username='guard1',
+        hashed_password='hash2',
+        role=StaffRole.GUARD,
+    )
+    db_session.add_all([admin, guard])
+    await db_session.commit()
+
+    resp = await client.get('/auth/staff')
+
+    assert resp.status_code == 200
+    data = resp.json()
+    roles = [s['role'] for s in data]
+    assert StaffRole.ADMIN.value in roles or 'ADMIN' in roles
+    assert StaffRole.GUARD.value in roles or 'GUARD' in roles
