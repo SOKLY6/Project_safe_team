@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,7 +33,11 @@ async def get_access_logs(
     return [
         {
             'id': log.id,
-            'timestamp': log.timestamp.isoformat(),
+            'timestamp': (
+                log.timestamp.replace(tzinfo=timezone.utc).isoformat()
+                if log.timestamp.tzinfo is None
+                else log.timestamp.isoformat()
+            ),
             'user_id': log.user_id,
             'user_name': user.name if user else None,
             'organization_id': log.organization_id,

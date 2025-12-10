@@ -234,7 +234,13 @@ const Statistics = () => {
     };
 
     filteredEvents.forEach(event => {
-      const date = new Date(event.timestamp);
+      // Если timestamp без timezone, добавляем 'Z' для UTC
+      let timestampStr = event.timestamp;
+      if (typeof event.timestamp === 'string' && !event.timestamp.includes('Z') && !event.timestamp.includes('+') && !event.timestamp.includes('-', 10)) {
+        timestampStr = event.timestamp + 'Z';
+      }
+      const date = new Date(timestampStr);
+      
       const formattedTime = date.toLocaleString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
@@ -284,7 +290,18 @@ const Statistics = () => {
   };
 
   const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
+    // Если timestamp без timezone, добавляем 'Z' для UTC
+    let timestampStr = timestamp;
+    if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+') && !timestamp.includes('-', 10)) {
+      timestampStr = timestamp + 'Z';
+    }
+    const date = new Date(timestampStr);
+    
+    // Проверяем, что дата валидна
+    if (isNaN(date.getTime())) {
+      return timestamp; // Возвращаем исходное значение, если не удалось распарсить
+    }
+    
     return date.toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',

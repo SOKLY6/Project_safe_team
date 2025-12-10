@@ -383,7 +383,8 @@ const ApiPanel = () => {
         const data = {};
         ep.fields.forEach(f => {
           const val = formData[`field-${id}-${f.name}`];
-          if (val) {
+          // Для опциональных полей отправляем только если значение заполнено
+          if (val !== undefined && val !== null && val !== '') {
             data[f.name] = f.type === 'number' ? Number(val) : val;
           }
         });
