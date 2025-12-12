@@ -75,7 +75,7 @@ const Navbar = () => {
                     className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
                     to="/api-panel"
                   >
-                    Панель управления
+                    Центр управления
                   </NavLink>
                 </li>
               </>

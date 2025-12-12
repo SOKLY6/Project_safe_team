@@ -23,7 +23,7 @@ const Dashboard = () => {
                 <i className="bi bi-grid-1x2 text-white" style={{ fontSize: '32px' }}></i>
               </div>
             </div>
-            <h1 className="h3 mb-3 text-center fw-bold">Панель управления</h1>
+            <h1 className="h3 mb-3 text-center fw-bold">Главная панель</h1>
             <p className="text-muted mb-5 text-center" style={{ fontSize: '1.1rem' }}>
               Добро пожаловать! Выберите нужный раздел для работы.
             </p>
@@ -74,11 +74,11 @@ const Dashboard = () => {
                     <Link
                       className="btn btn-primary btn-tile"
                       to="/api-panel"
-                      aria-label="Панель управления"
+                      aria-label="Центр управления"
                     >
                       <i className="bi bi-code-slash"></i>
                     </Link>
-                    <div className="small text-muted mt-2">Панель управления</div>
+                    <div className="small text-muted mt-2">Центр управления</div>
                   </div>
                 </>
               )}

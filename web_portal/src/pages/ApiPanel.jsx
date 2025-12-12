@@ -514,7 +514,7 @@ const ApiPanel = () => {
       <main className="container mb-5">
         <div className="row mb-4">
           <div className="col-12">
-            <h1 className="h3 mb-2">Панель управления</h1>
+            <h1 className="h3 mb-2">Центр управления</h1>
           </div>
         </div>
 
