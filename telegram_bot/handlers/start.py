@@ -1,6 +1,6 @@
 from typing import Any
 
-from telegram import Update
+from telegram import Update  # type: ignore[attr-defined]
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -25,10 +25,12 @@ async def start_command(
 ) -> None:
     if update.effective_user is None:
         return
+
     telegram_id = update.effective_user.id
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
     assert update.message is not None
+
     if existing_user:
         await update.message.reply_text(
             f'✅ Добро пожаловать, {existing_user["name"]}!\n'
@@ -49,10 +51,12 @@ async def start_login(
 ) -> int:
     if update.effective_user is None:
         return ConversationHandler.END
+
     telegram_id = update.effective_user.id
     existing_user = await api_client.get_user_by_telegram_id(telegram_id)
 
     assert update.message is not None
+
     if existing_user:
         await update.message.reply_text(
             f'✅ Вы уже авторизованы как {existing_user["name"]}',
@@ -69,8 +73,10 @@ async def process_login(
 ) -> int:
     assert update.message is not None
     assert update.message.text is not None
+
     if context.user_data is not None:
         context.user_data['login'] = update.message.text.strip()
+
     await update.message.reply_text('🔑 Введите пароль:')
     return WAITING_PASSWORD
 
@@ -80,11 +86,13 @@ async def process_password(
 ) -> int:
     assert update.message is not None
     assert update.message.text is not None
+
     if update.effective_user is None:
         return ConversationHandler.END
-    telegram_id = update.effective_user.id
 
+    telegram_id = update.effective_user.id
     username: Any = None
+
     if context.user_data is not None:
         username = context.user_data.get('login')
 
@@ -152,6 +160,7 @@ async def cancel_registration(
 
 def setup_start_handlers(application: Application) -> None:
     application.add_handler(CommandHandler('start', start_command))
+
     login_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex('🔐 Вход'), start_login)],
         states={
@@ -167,4 +176,5 @@ def setup_start_handlers(application: Application) -> None:
         },
         fallbacks=[CommandHandler('cancel', cancel_login)],
     )
+
     application.add_handler(login_handler)

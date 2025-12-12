@@ -1,4 +1,7 @@
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram import (  # type: ignore[attr-defined]
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
 
 
 def get_main_keyboard() -> ReplyKeyboardMarkup:

@@ -7,7 +7,7 @@ from app.services.auth import get_password_hash
 from app.utils.database import Base, async_session, engine
 
 
-async def init_db():
+async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

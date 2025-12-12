@@ -27,12 +27,11 @@ router = APIRouter(prefix='/auth', tags=['Authentication'])
 async def register(
     staff_data: StaffCreate,
     db: AsyncSession = Depends(get_db),
-):
+) -> StaffResponse:
     result = await db.execute(
         select(Staff).where(Staff.username == staff_data.username)
     )
     existing_staff = result.scalar_one_or_none()
-
     if existing_staff:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -53,14 +52,13 @@ async def register(
 async def login(
     login_data: StaffLogin,
     db: AsyncSession = Depends(get_db),
-):
+) -> Token:
     result = await db.execute(
         select(Staff).where(Staff.username == login_data.username)
     )
     staff = result.scalar_one_or_none()
-
     if not staff or not verify_password(
-        login_data.password, staff.hashed_password
+        login_data.password, str(staff.hashed_password)
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -73,13 +71,13 @@ async def login(
         data={'sub': staff.username, 'role': staff.role},
         expires_delta=access_token_expires,
     )
-    return {'access_token': access_token, 'token_type': 'bearer'}
+    return Token(access_token=access_token, token_type='bearer')
 
 
 @router.get('/me', response_model=StaffResponse)
 async def get_me(
     current_staff: Staff = Depends(get_current_staff),
-):
+) -> StaffResponse:
     return current_staff
 
 
@@ -88,7 +86,7 @@ async def delete_staff(
     staff_id: int,
     db: AsyncSession = Depends(get_db),
     current_admin: Staff = Depends(get_current_admin),
-):
+) -> None:
     if current_admin.id == staff_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -97,7 +95,6 @@ async def delete_staff(
 
     result = await db.execute(select(Staff).where(Staff.id == staff_id))
     staff = result.scalar_one_or_none()
-
     if not staff:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='Staff not found'
@@ -111,7 +108,7 @@ async def delete_staff(
 async def list_staff(
     db: AsyncSession = Depends(get_db),
     _: Staff = Depends(get_current_admin),
-):
+) -> list[StaffResponse]:
     result = await db.execute(select(Staff))
     staff_list = result.scalars().all()
-    return staff_list
+    return list(staff_list)

@@ -1,7 +1,7 @@
 from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import organization as models
@@ -36,7 +36,6 @@ async def create_organization(
         )
     )
     existing = result.scalar_one_or_none()
-
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -61,13 +60,11 @@ async def get_organization_by_id(
         )
     )
     db_organization = result.scalar_one_or_none()
-
     if not db_organization:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='Organization not found',
         )
-
     return schemas.OrganizationResponse(
         id=cast(int, db_organization.id), name=cast(str, db_organization.name)
     )
@@ -85,7 +82,6 @@ async def update_organization(
         )
     )
     db_organization = result.scalar_one_or_none()
-
     if not db_organization:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -104,10 +100,21 @@ async def update_organization(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='Organization with this name already exists',
             )
-        db_organization.name = organization_update.name
 
-    await db.commit()
-    await db.refresh(db_organization)
+        await db.execute(
+            update(models.Organization)
+            .where(models.Organization.id == organization_id)
+            .values(name=organization_update.name)
+        )
+        await db.commit()
+
+        result = await db.execute(
+            select(models.Organization).filter(
+                models.Organization.id == organization_id
+            )
+        )
+        db_organization = result.scalar_one()
+
     return db_organization
 
 
@@ -121,7 +128,6 @@ async def delete_organization(
         )
     )
     db_organization = result.scalar_one_or_none()
-
     if not db_organization:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

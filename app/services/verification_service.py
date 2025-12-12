@@ -2,14 +2,14 @@ import re
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.access_log import AccessLog
 from app.models.qr_code import QRCode
 from app.models.user import User
 
-rate_limit_store = defaultdict(list)
+rate_limit_store: dict[str, list[datetime]] = defaultdict(list)
 
 
 def validate_qr_format(qr_data: str) -> bool:
@@ -43,12 +43,12 @@ async def check_user_access(
     ).scalar_one_or_none()
     if not user:
         return False
-    return user.organization_id == organization_id
+    return bool(user.organization_id == organization_id)
 
 
 async def verify_qr_code(
     qr_data: str, scanner_id: str, db: AsyncSession
-) -> dict:
+) -> dict[str, str | dict[str, object] | None]:
     if not check_rate_limit(scanner_id):
         await db_add_log(
             db,
@@ -92,12 +92,19 @@ async def verify_qr_code(
             'user_info': None,
         }
 
-    if qr_token.used:
+    # Получаем ID для логов
+    qr_user_id = int(qr_token.user_id) if qr_token.user_id else None
+    qr_org_id = (
+        int(qr_token.organization_id) if qr_token.organization_id else None
+    )
+    qr_id = int(qr_token.id) if qr_token.id else None
+
+    if bool(qr_token.used):
         await db_add_log(
             db,
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
+            user_id=qr_user_id,
+            organization_id=qr_org_id,
+            qr_code_id=qr_id,
             scanner_id=scanner_id,
             access_granted=False,
             reason='Token already used',
@@ -108,12 +115,30 @@ async def verify_qr_code(
             'user_info': None,
         }
 
-    if not validate_timestamp(qr_token.expires_at):
+    # Проверяем срок действия - получаем значение и проверяем тип
+    expires_at = qr_token.expires_at
+    if expires_at is None or not isinstance(expires_at, datetime):
         await db_add_log(
             db,
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
+            user_id=qr_user_id,
+            organization_id=qr_org_id,
+            qr_code_id=qr_id,
+            scanner_id=scanner_id,
+            access_granted=False,
+            reason='Invalid expiration date',
+        )
+        return {
+            'status': 'denied',
+            'message': 'Invalid expiration date',
+            'user_info': None,
+        }
+
+    if not validate_timestamp(expires_at):
+        await db_add_log(
+            db,
+            user_id=qr_user_id,
+            organization_id=qr_org_id,
+            qr_code_id=qr_id,
             scanner_id=scanner_id,
             access_granted=False,
             reason='Token expired',
@@ -131,9 +156,9 @@ async def verify_qr_code(
     if not user:
         await db_add_log(
             db,
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
+            user_id=qr_user_id,
+            organization_id=qr_org_id,
+            qr_code_id=qr_id,
             scanner_id=scanner_id,
             access_granted=False,
             reason='User not found',
@@ -144,12 +169,14 @@ async def verify_qr_code(
             'user_info': None,
         }
 
-    if not await check_user_access(user.id, qr_token.organization_id, db):
+    user_id_int = int(user.id) if user.id else 0
+
+    if qr_org_id and not await check_user_access(user_id_int, qr_org_id, db):
         await db_add_log(
             db,
-            user_id=qr_token.user_id,
-            organization_id=qr_token.organization_id,
-            qr_code_id=qr_token.id,
+            user_id=qr_user_id,
+            organization_id=qr_org_id,
+            qr_code_id=qr_id,
             scanner_id=scanner_id,
             access_granted=False,
             reason='Доступ запрещён: несоответствие организации',
@@ -160,17 +187,22 @@ async def verify_qr_code(
             'user_info': None,
         }
 
-    qr_token.used = True
+    # Используем update для изменения значения
+    await db.execute(
+        update(QRCode).where(QRCode.id == qr_token.id).values(used=True)
+    )
 
     await db_add_log(
         db,
-        user_id=user.id,
-        organization_id=qr_token.organization_id,
-        qr_code_id=qr_token.id,
+        user_id=user_id_int,
+        organization_id=qr_org_id,
+        qr_code_id=qr_id,
         scanner_id=scanner_id,
         access_granted=True,
         reason='Access granted',
     )
+
+    await db.commit()
 
     return {
         'status': 'granted',
@@ -192,7 +224,7 @@ async def db_add_log(
     scanner_id: str | None = None,
     access_granted: bool = False,
     reason: str | None = None,
-):
+) -> None:
     log_entry = AccessLog(
         user_id=user_id,
         organization_id=organization_id,

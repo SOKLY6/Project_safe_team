@@ -28,7 +28,7 @@ async def bind_telegram(
     user_id: int,
     data: schemas.UserBindTelegram,
     db: AsyncSession = Depends(get_db),
-):
+) -> schemas.UserResponse:
     result = await db.execute(
         select(models.User).where(models.User.id == user_id)
     )
@@ -67,12 +67,10 @@ async def get_user_by_id(
         select(models.User).filter(models.User.id == user_id)
     )
     db_user = result.scalar_one_or_none()
-
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
         )
-
     return db_user
 
 
@@ -81,7 +79,7 @@ async def update_user(
     user_id: int,
     user_update: schemas.UserUpdate,
     db: AsyncSession = Depends(get_db),
-):
+) -> schemas.UserResponse:
     result = await db.execute(
         select(models.User).where(models.User.id == user_id)
     )
@@ -93,20 +91,9 @@ async def update_user(
 
     if user_update.name is not None:
         db_user.name = user_update.name
+
     if user_update.organization_id is not None:
         db_user.organization_id = user_update.organization_id
-    if user_update.telegram_id is not None:
-        result = await db.execute(
-            select(models.User).where(
-                models.User.telegram_id == user_update.telegram_id
-            )
-        )
-        if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Telegram ID уже привязан',
-            )
-        db_user.telegram_id = user_update.telegram_id
 
     await db.commit()
     await db.refresh(db_user)
@@ -123,7 +110,6 @@ async def update_user_by_telegram_id(
         select(models.User).filter(models.User.telegram_id == telegram_id)
     )
     db_user = result.scalar_one_or_none()
-
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
@@ -131,6 +117,7 @@ async def update_user_by_telegram_id(
 
     if user_update.name is not None:
         db_user.name = user_update.name
+
     if user_update.organization_id is not None:
         db_user.organization_id = user_update.organization_id
 
@@ -147,7 +134,6 @@ async def delete_user(
         select(models.User).filter(models.User.id == user_id)
     )
     db_user = result.scalar_one_or_none()
-
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
@@ -172,7 +158,6 @@ async def delete_user_by_telegram_id(
         select(models.User).filter(models.User.telegram_id == telegram_id)
     )
     db_user = result.scalar_one_or_none()
-
     if not db_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='User not found'
@@ -185,13 +170,13 @@ async def delete_user_by_telegram_id(
 @router.post('/login', response_model=schemas.UserResponse)
 async def login_user(
     login_data: schemas.UserLogin, db: AsyncSession = Depends(get_db)
-):
+) -> schemas.UserResponse:
     result = await db.execute(
         select(models.User).where(models.User.username == login_data.username)
     )
     user = result.scalar_one_or_none()
     if not user or not verify_password(
-        login_data.password, user.hashed_password
+        login_data.password, str(user.hashed_password)
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -203,7 +188,7 @@ async def login_user(
 @router.get('/by-telegram/{telegram_id}', response_model=schemas.UserResponse)
 async def get_user_by_telegramid(
     telegram_id: int, db: AsyncSession = Depends(get_db)
-):
+) -> schemas.UserResponse:
     result = await db.execute(
         select(models.User).filter(models.User.telegram_id == telegram_id)
     )
@@ -218,7 +203,7 @@ async def get_user_by_telegramid(
 @router.post('/register', response_model=schemas.UserResponse)
 async def register_user(
     user: schemas.UserCreate, db: AsyncSession = Depends(get_db)
-):
+) -> schemas.UserResponse:
     result = await db.execute(
         select(models.User).where(models.User.username == user.username)
     )

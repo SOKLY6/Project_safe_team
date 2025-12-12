@@ -2,7 +2,7 @@ import io
 from typing import Any
 
 import qrcode
-from telegram import Update
+from telegram import Update  # type: ignore[attr-defined]
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -29,6 +29,7 @@ async def cmd_help(
         '🆔 Мой QR-код - сгенерировать QR-код\n'
         '👤 Профиль - информация о профиле\n'
     )
+
     assert update.message is not None
     await update.message.reply_text(help_text)
 
@@ -39,10 +40,12 @@ async def show_stats(
 ) -> None:
     if update.effective_user is None:
         return
+
     telegram_id = update.effective_user.id
     user = await api_client.get_user_by_telegram_id(telegram_id)
 
     assert update.message is not None
+
     if not user:
         await update.message.reply_text(
             '❌ Вы не зарегистрированы.\nНажмите "🔐 Вход" для начала работы.',
@@ -76,10 +79,12 @@ async def qr_generation(
 ) -> None:
     if update.effective_user is None:
         return
+
     telegram_id = update.effective_user.id
     user = await api_client.get_user_by_telegram_id(telegram_id)
 
     assert update.message is not None
+
     if not user:
         await update.message.reply_text(
             '❌ Вы не зарегистрированы.\n'
@@ -101,8 +106,8 @@ async def qr_generation(
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(qr_data['code'])
     qr.make(fit=True)
-    img = qr.make_image(fill_color='black', back_color='white')
 
+    img = qr.make_image(fill_color='black', back_color='white')
     bio = io.BytesIO()
     img.save(bio, 'PNG')
     bio.seek(0)
@@ -119,10 +124,12 @@ async def profile(
 ) -> None:
     if update.effective_user is None:
         return
+
     telegram_id = update.effective_user.id
     user = await api_client.get_user_by_telegram_id(telegram_id)
 
     assert update.message is not None
+
     if not user:
         await update.message.reply_text(
             '❌ Вы не зарегистрированы.\nНажмите "🔐 Вход" для начала работы.',

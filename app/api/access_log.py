@@ -17,7 +17,7 @@ async def get_access_logs(
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-):
+) -> list[dict[str, object]]:
     query = (
         select(AccessLog, User, Organization)
         .outerjoin(User, AccessLog.user_id == User.id)
