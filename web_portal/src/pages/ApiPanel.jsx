@@ -12,6 +12,24 @@ const endpoints = [
     category: 'Пользователи',
     items: [
       {
+        method: 'GET',
+        path: '/users/',
+        name: 'Получить список пользователей',
+        queryParams: [
+          { name: 'skip', type: 'number', required: false, label: 'Пропустить (опционально)', defaultValue: '0' },
+          { name: 'limit', type: 'number', required: false, label: 'Лимит (опционально)', defaultValue: '100' }
+        ]
+      },
+      {
+        method: 'POST',
+        path: '/users/login',
+        name: 'Войти (пользователь)',
+        fields: [
+          { name: 'username', type: 'text', required: true, label: 'Логин' },
+          { name: 'password', type: 'password', required: true, label: 'Пароль' }
+        ]
+      },
+      {
         method: 'POST',
         path: '/users/register',
         name: 'Создать пользователя',
